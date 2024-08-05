@@ -1,0 +1,25 @@
+name: Update
+on:
+  schedule:
+    - cron: '0,30 * * * *'
+  workflow_dispatch:
+jobs:
+  update:
+    name: check, update and commit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Update
+        run: |
+         ./update.py
+      - name: Commit
+        run: |
+          git config --global user.email "dolares-bot@example.com"
+          git config --global user.name "dolares-bot"
+          git add -A
+          git diff --quiet && git diff --staged --quiet || (git commit -m "[ci] $(date '+%Y-%m-%d')"; git push -q "https://$GH_TOKEN@github.com/mauforonda/dolares.git" master)
