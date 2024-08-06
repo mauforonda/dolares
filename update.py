@@ -79,9 +79,9 @@ def checkPrices(fiat, asset, tradeType, rows=20, max_retries=3, timeout=10):
             page += 1
 
     return dict(
-        low=min(prices),
-        high=max(prices),
-        median=statistics.median(prices),
+        low=round(min(prices), 2),
+        high=round(max(prices), 2),
+        median=round(statistics.median(prices), 2),
         offers=len(prices),
         tradeable=round(sum(tradeable), 2),
     )
@@ -94,7 +94,7 @@ def appendPrices(prices, filename, timestamp):
         "high": prices["high"],
         "median": prices["median"],
         "offers": prices["offers"],
-        "tradeable": prices["tradeable"]
+        "tradeable": prices["tradeable"],
     }
 
     file_exists = True
@@ -105,7 +105,9 @@ def appendPrices(prices, filename, timestamp):
         file_exists = False
 
     with open(filename, "a", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["timestamp", "low", "high", "median", "offers", "tradeable"])
+        writer = csv.DictWriter(
+            f, fieldnames=["timestamp", "low", "high", "median", "offers", "tradeable"]
+        )
         if not file_exists:
             writer.writeheader()
         writer.writerow(row)
