@@ -1,2 +1,6 @@
-*.ipynb
 .ipynb_checkpoints
+.ruff_cache
+*.ipynb
+view/dist/
+view/node_modules/
+view/src/.observablehq/cache/
