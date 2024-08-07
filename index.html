@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Dólares</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
+<link rel="preload" as="style" href="./_observablehq/theme-air,near-midnight,alt,wide.css">
+<link rel="preload" as="style" href="./_observablehq/stdlib/inputs.css">
+<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
+<link rel="stylesheet" type="text/css" href="./_observablehq/theme-air,near-midnight,alt,wide.css">
+<link rel="stylesheet" type="text/css" href="./_observablehq/stdlib/inputs.css">
+<link rel="modulepreload" href="./_observablehq/client.js">
+<link rel="modulepreload" href="./_observablehq/runtime.js">
+<link rel="modulepreload" href="./_observablehq/stdlib.js">
+<link rel="modulepreload" href="./_import/components/plot.ad6a058b.js">
+<link rel="modulepreload" href="./_npm/@observablehq/plot@0.6.16/_esm.js">
+<link rel="modulepreload" href="./_npm/htl@0.3.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3@7.9.0/_esm.js">
+<link rel="modulepreload" href="./_observablehq/stdlib/inputs.js">
+<link rel="modulepreload" href="./_npm/isoformat@0.2.1/_esm.js">
+<link rel="modulepreload" href="./_npm/interval-tree-1d@1.0.4/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-array@3.2.4/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-axis@3.0.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-brush@3.0.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-chord@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-color@3.1.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-contour@4.0.2/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-delaunay@6.0.4/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-dispatch@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-drag@3.0.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-dsv@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-ease@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-fetch@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-force@3.0.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-format@3.1.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-geo@3.1.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-hierarchy@3.1.2/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-interpolate@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-path@3.1.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-polygon@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-quadtree@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-random@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-scale@4.0.2/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-scale-chromatic@3.1.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-selection@3.0.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-shape@3.2.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-time@3.1.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-time-format@4.1.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-timer@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-transition@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-zoom@3.0.0/_esm.js">
+<link rel="modulepreload" href="./_npm/binary-search-bounds@2.0.5/_esm.js">
+<link rel="modulepreload" href="./_npm/internmap@2.0.3/_esm.js">
+<link rel="modulepreload" href="./_npm/delaunator@5.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/robust-predicates@3.0.2/_esm.js">
+<link rel="icon" href="./_file/favicon.cc2893b5.png" type="image/png">
+<script type="module">
+
+import {define} from "./_observablehq/client.js";
+
+define({id: "b81d0582", outputs: ["drawPlot","displayObservation"], body: async () => {
+const {drawPlot, displayObservation} = await import("./_import/components/plot.ad6a058b.js");
+
+return {drawPlot,displayObservation};
+}});
+
+define({id: "0a9dda0f", inputs: ["Inputs","Generators"], outputs: ["tradeTypes","tradeType"], body: (Inputs,Generators) => {
+const tradeTypes = Inputs.radio(["buy", "sell"], {
+    format: d => d == "buy" ? "compra" : "venta",
+    value: "buy"
+})
+const tradeType = Generators.input(tradeTypes)
+return {tradeTypes,tradeType};
+}});
+
+define({id: "2e291c05", inputs: ["d3","tradeType"], outputs: ["github","data"], body: (d3,tradeType) => {
+const github = "https://raw.githubusercontent.com/mauforonda/dolares/main";
+const data = d3.csv(`${github}/${tradeType}.csv`, d3.autoType);
+return {github,data};
+}});
+
+define({id: "cb11314c", inputs: ["drawPlot","data","width","Generators"], outputs: ["plot","observation"], body: (drawPlot,data,width,Generators) => {
+const plot = drawPlot(data, width);
+const observation = Generators.input(plot);
+return {plot,observation};
+}});
+
+define({id: "3740d280", inputs: ["displayObservation","data","observation"], outputs: ["lastObservation","plotHeader"], body: (displayObservation,data,observation) => {
+const lastObservation = displayObservation(data.slice(-1)[0]);
+const plotHeader = observation
+    ? displayObservation(observation)
+    : lastObservation;
+return {lastObservation,plotHeader};
+}});
+
+define({id: "9cf6dfe6", mode: "inline", inputs: ["tradeTypes","display"], body: async (tradeTypes,display) => {
+display(await(
+tradeTypes
+))
+}});
+
+define({id: "845d4acb", mode: "inline", inputs: ["plotHeader","display"], body: async (plotHeader,display) => {
+display(await(
+plotHeader
+))
+}});
+
+define({id: "0f3850ab", mode: "inline", inputs: ["plot","display"], body: async (plot,display) => {
+display(await(
+plot
+))
+}});
+
+</script>
+<div id="observablehq-center">
+<main id="observablehq-main" class="observablehq">
+<link rel="stylesheet" href="./_file/style.3383839f.css">
+<div class="observablehq observablehq--block"><!--:b81d0582:--></div>
+<div class="observablehq observablehq--block"><!--:0a9dda0f:--></div>
+<div class="observablehq observablehq--block"><!--:2e291c05:--></div>
+<div class="observablehq observablehq--block"><!--:cb11314c:--></div>
+<div class="observablehq observablehq--block"><!--:3740d280:--></div>
+<div class="title">Dólar en Bolivia</div>
+<div class="options">
+    <observablehq-loading></observablehq-loading><!--:9cf6dfe6:-->
+</div>
+<div class="plotHeader">
+    <observablehq-loading></observablehq-loading><!--:845d4acb:-->
+</div>
+<div class="card">
+    <observablehq-loading></observablehq-loading><!--:0f3850ab:-->
+</div>
+<div class="source">
+    <div>
+        <span><a href="https://p2p.binance.com/en/trade/all-payments/USDT?fiat=BOB" target="_blank" rel="noopener noreferrer">Binance P2P</a></span>
+        <span class="annotation">fuente</span>
+    </div>
+    <div>&amp;</div>
+    <div>
+        <span><a href="mailto:mauriforonda@gmail.com" target="_blank" rel="noopener noreferrer">Mauricio Foronda</a></span>
+        <span class="annotation">creación</span>
+    </div>
+</div></main>
+</div>
