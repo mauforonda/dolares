@@ -113,12 +113,12 @@ body {
 }
 
 .source {
-    opacity: .7;
+    opacity: .8;
     display: flex;
     flex-direction: row;
     justify-content: center;
     align-items: center;
-    margin: 6em 0 2rem 0;
+    margin: 10em 0 0 0;
     font-size: 0.6em;
     color: var(--base);
     gap: 1rem;
@@ -140,13 +140,17 @@ body {
 }
 
 .explainer {
+    font-size: 15px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     margin: 2rem;
-    font-size: 0.6em;
     gap: .8rem;
+
+    div {
+        font-size: 0.8em;
+    }
 
     input[type="number"] {
         margin: 0 5px;

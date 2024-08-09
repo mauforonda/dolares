@@ -66,7 +66,7 @@ const bolivianos = Generators.input(bolivianosInput);
     </div>
     <div>
         <span>que al tipo de cambio oficial serían</span>
-        <span class="underlined">${d3.format(".2f")(bolivianos / officialRates[tradeType])} Dólares</span>.
+        <span class="underlined">${bolivianos ? d3.format(".2f")(bolivianos / officialRates[tradeType]) : "🤷" } Dólares</span>.
     </div>
     <div>
         <span>Una devaluación del </span>
