@@ -41,7 +41,7 @@ export function drawPlot(data, width) {
 
     const dotLimit = {
         x: "timestamp",
-        r: 0.5,
+        r: 2,
         stroke: null,
         fill: colors.base,
     };
@@ -50,24 +50,6 @@ export function drawPlot(data, width) {
         x: "timestamp",
         y: "median",
     };
-
-    const wideMarks = [
-        Plot.ruleX(data, {
-            x: "timestamp",
-            y1: "low",
-            y2: "high",
-            strokeWidth: 0.2,
-            strokeDasharray: 2,
-        }),
-        Plot.dot(data, {
-            ...dotLimit,
-            y: "low",
-        }),
-        Plot.dot(data, {
-            ...dotLimit,
-            y: "high",
-        }),
-    ];
 
     return Plot.plot({
         marginTop: 20,
@@ -87,7 +69,6 @@ export function drawPlot(data, width) {
         },
         marks: [
             Plot.gridY({}),
-            width > 900 ? wideMarks : null,
             withGradient(
                 { color: colors.figures, limit: (lowLimit * 100) / 2 },
                 (fill) =>
@@ -116,13 +97,31 @@ export function drawPlot(data, width) {
                     strokeOpacity: 0.2,
                 })
             ),
-            Plot.dot(data, {
-                ...dotMedian,
-                r: 2,
-                fill: colors.figures,
-                fillOpacity: 0.9,
-                stroke: null,
-            }),
+            Plot.ruleX(
+                data,
+                Plot.pointerX({
+                    x: "timestamp",
+                    y1: "low",
+                    y2: "high",
+                    strokeWidth: 0.5,
+                    strokeOpacity: 0.9,
+                    strokeDasharray: 2,
+                })
+            ),
+            Plot.dot(
+                data,
+                Plot.pointerX({
+                    ...dotLimit,
+                    y: "low",
+                })
+            ),
+            Plot.dot(
+                data,
+                Plot.pointerX({
+                    ...dotLimit,
+                    y: "high",
+                })
+            ),
         ],
     });
 }

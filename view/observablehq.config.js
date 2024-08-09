@@ -5,6 +5,5 @@ export default {
   output: "../docs",
   toc: false,
   sidebar: false,
-  theme: "wide",
   footer: "",
 };
