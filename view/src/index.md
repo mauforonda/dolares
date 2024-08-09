@@ -1,7 +1,3 @@
----
-theme: dashboard
----
-
 <link rel="stylesheet" href="style.css">
 
 ```js
@@ -10,10 +6,14 @@ import { drawPlot, displayObservation } from "./components/plot.js";
 
 ```js
 const tradeTypes = Inputs.radio(["buy", "sell"], {
-    format: d => d == "buy" ? "compra" : "venta",
-    value: "buy"
-})
-const tradeType = Generators.input(tradeTypes)
+    format: (d) => (d == "buy" ? "compra" : "venta"),
+    value: "buy",
+});
+const tradeType = Generators.input(tradeTypes);
+const officialRates = {
+    buy: 6.86,
+    sell: 6.96
+}
 ```
 
 ```js
@@ -27,10 +27,21 @@ const observation = Generators.input(plot);
 ```
 
 ```js
-const lastObservation = displayObservation(data.slice(-1)[0]);
-const plotHeader = observation
-    ? displayObservation(observation)
-    : lastObservation;
+const selected = observation ? observation : data.slice(-1)[0];
+const plotHeader = displayObservation(selected);
+```
+
+```js
+const bolivianosInitiate = Inputs.input(100);
+const bolivianosInput = Inputs.bind(
+    htl.html`<input type=number style="width: 80px;">`,
+    bolivianosInitiate
+);
+const bolivianos = Generators.input(bolivianosInput);
+```
+
+```js
+
 ```
 
 <div class="title">Dólar en Bolivia</div>
@@ -45,6 +56,22 @@ const plotHeader = observation
 
 <div class="card">
     ${plot}
+</div>
+
+<div class="explainer">
+    <div>
+        Bs. ${bolivianosInput}
+        <span> equivalen a </span>
+        <span class="underlined">${ bolivianos ? d3.format(".2f")(bolivianos / selected.median) : "🤷" } Dólares</span>,
+    </div>
+    <div>
+        <span>que al tipo de cambio oficial serían</span>
+        <span class="underlined">${d3.format(".2f")(bolivianos / officialRates[tradeType])} Dólares</span>.
+    </div>
+    <div>
+        <span>Una devaluación del </span>
+        <span class="underlined">${(d3.format(".2%")(1 - (officialRates[tradeType] / selected.median)))}</span>.
+    </div>
 </div>
 
 <div class="source">
