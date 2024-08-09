@@ -140,6 +140,7 @@ body {
 }
 
 .explainer {
+    color: var(--base);
     font-size: 15px;
     display: flex;
     flex-direction: column;

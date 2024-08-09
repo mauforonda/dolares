@@ -2,6 +2,30 @@ import * as Plot from "../../_npm/@observablehq/plot@0.6.16/_esm.js";
 import { html, svg } from "../../_npm/htl@0.3.1/_esm.js";
 import { format } from "../../_npm/d3@7.9.0/_esm.js";
 
+const customFormat = () => {
+    const years = new Set();
+    const months = new Set();
+
+    const monthFormat = Plot.formatMonth("es-BO");
+    return (d) => {
+        const day = d.getDate();
+        const month = monthFormat(d.getMonth());
+        const year = d.getFullYear();
+        const monthString = `${month}\n${year}`
+
+        if (!years.has(year)) {
+            years.add(year);
+            months.add(monthString);
+            return monthString;
+        } else if (!months.has(monthString)) {
+            months.add(monthString);
+            return month;
+        } else {
+            return day;
+        }
+    };
+};
+
 function withGradient({ color, limit, id = "gradient" }, callback) {
     return [
         callback(`url(#${id})`),
@@ -15,6 +39,10 @@ function withGradient({ color, limit, id = "gradient" }, callback) {
 }
 
 export function drawPlot(data, width) {
+    const hours =
+        (data.slice(-1)[0].timestamp - data[0].timestamp) / (1000 * 60 * 60);
+    const hoursFit = (width / hours) > 3
+
     const colors = {
         base: "#a3a3a3",
         figures: "#34A853",
@@ -54,6 +82,7 @@ export function drawPlot(data, width) {
     return Plot.plot({
         marginTop: 20,
         marginLeft: 5,
+        marginBottom: 35,
         style: {
             color: colors.base,
         },
@@ -68,6 +97,21 @@ export function drawPlot(data, width) {
             domain: [min * 0.97, max * 1.03],
         },
         marks: [
+            hoursFit ? Plot.axisX({
+                tickSize: 4,
+                stroke: colors.base,
+                ticks: "hour",
+                strokeOpacity: 0.5,
+                tickFormat: "",
+                filter: (d) => d.getHours() > 0,
+            }) : null,
+            Plot.axisX({
+                tickSize: 8,
+                stroke: colors.base,
+                ticks: 5,
+                tickFormat: customFormat(),
+                lineHeight: 1.2,
+            }),
             Plot.gridY({}),
             withGradient(
                 { color: colors.figures, limit: (lowLimit * 100) / 2 },
@@ -89,7 +133,7 @@ export function drawPlot(data, width) {
                 data,
                 Plot.pointerX({
                     ...dotMedian,
-                    r: "offers",
+                    r: 4,
                     fill: colors.figures,
                     fillOpacity: 1,
                     stroke: colors.figures,
