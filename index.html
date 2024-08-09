@@ -4,15 +4,15 @@
 <title>Dólares</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
-<link rel="preload" as="style" href="./_observablehq/theme-air,near-midnight,alt,wide.css">
+<link rel="preload" as="style" href="./_observablehq/theme-air,near-midnight.css">
 <link rel="preload" as="style" href="./_observablehq/stdlib/inputs.css">
 <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
-<link rel="stylesheet" type="text/css" href="./_observablehq/theme-air,near-midnight,alt,wide.css">
+<link rel="stylesheet" type="text/css" href="./_observablehq/theme-air,near-midnight.css">
 <link rel="stylesheet" type="text/css" href="./_observablehq/stdlib/inputs.css">
 <link rel="modulepreload" href="./_observablehq/client.js">
 <link rel="modulepreload" href="./_observablehq/runtime.js">
 <link rel="modulepreload" href="./_observablehq/stdlib.js">
-<link rel="modulepreload" href="./_import/components/plot.ad6a058b.js">
+<link rel="modulepreload" href="./_import/components/plot.32f36b28.js">
 <link rel="modulepreload" href="./_npm/@observablehq/plot@0.6.16/_esm.js">
 <link rel="modulepreload" href="./_npm/htl@0.3.1/_esm.js">
 <link rel="modulepreload" href="./_npm/d3@7.9.0/_esm.js">
@@ -59,18 +59,22 @@
 import {define} from "./_observablehq/client.js";
 
 define({id: "b81d0582", outputs: ["drawPlot","displayObservation"], body: async () => {
-const {drawPlot, displayObservation} = await import("./_import/components/plot.ad6a058b.js");
+const {drawPlot, displayObservation} = await import("./_import/components/plot.32f36b28.js");
 
 return {drawPlot,displayObservation};
 }});
 
-define({id: "0a9dda0f", inputs: ["Inputs","Generators"], outputs: ["tradeTypes","tradeType"], body: (Inputs,Generators) => {
+define({id: "da5370ee", inputs: ["Inputs","Generators"], outputs: ["tradeTypes","tradeType","officialRates"], body: (Inputs,Generators) => {
 const tradeTypes = Inputs.radio(["buy", "sell"], {
-    format: d => d == "buy" ? "compra" : "venta",
-    value: "buy"
-})
-const tradeType = Generators.input(tradeTypes)
-return {tradeTypes,tradeType};
+    format: (d) => (d == "buy" ? "compra" : "venta"),
+    value: "buy",
+});
+const tradeType = Generators.input(tradeTypes);
+const officialRates = {
+    buy: 6.86,
+    sell: 6.96
+}
+return {tradeTypes,tradeType,officialRates};
 }});
 
 define({id: "2e291c05", inputs: ["d3","tradeType"], outputs: ["github","data"], body: (d3,tradeType) => {
@@ -85,12 +89,24 @@ const observation = Generators.input(plot);
 return {plot,observation};
 }});
 
-define({id: "3740d280", inputs: ["displayObservation","data","observation"], outputs: ["lastObservation","plotHeader"], body: (displayObservation,data,observation) => {
-const lastObservation = displayObservation(data.slice(-1)[0]);
-const plotHeader = observation
-    ? displayObservation(observation)
-    : lastObservation;
-return {lastObservation,plotHeader};
+define({id: "feb799cc", inputs: ["observation","data","displayObservation"], outputs: ["selected","plotHeader"], body: (observation,data,displayObservation) => {
+const selected = observation ? observation : data.slice(-1)[0];
+const plotHeader = displayObservation(selected);
+return {selected,plotHeader};
+}});
+
+define({id: "3bf90eb5", inputs: ["Inputs","htl","Generators"], outputs: ["bolivianosInitiate","bolivianosInput","bolivianos"], body: (Inputs,htl,Generators) => {
+const bolivianosInitiate = Inputs.input(100);
+const bolivianosInput = Inputs.bind(
+    htl.html`<input type=number style="width: 80px;">`,
+    bolivianosInitiate
+);
+const bolivianos = Generators.input(bolivianosInput);
+return {bolivianosInitiate,bolivianosInput,bolivianos};
+}});
+
+define({id: "01ba4719", body: () => {
+
 }});
 
 define({id: "9cf6dfe6", mode: "inline", inputs: ["tradeTypes","display"], body: async (tradeTypes,display) => {
@@ -111,15 +127,41 @@ plot
 ))
 }});
 
+define({id: "02aa75dd", mode: "inline", inputs: ["bolivianosInput","display"], body: async (bolivianosInput,display) => {
+display(await(
+bolivianosInput
+))
+}});
+
+define({id: "8ae2adc8", mode: "inline", inputs: ["bolivianos","d3","selected","display"], body: async (bolivianos,d3,selected,display) => {
+display(await(
+ bolivianos ? d3.format(".2f")(bolivianos / selected.median) : "🤷" 
+))
+}});
+
+define({id: "b8ded2fe", mode: "inline", inputs: ["d3","bolivianos","officialRates","tradeType","display"], body: async (d3,bolivianos,officialRates,tradeType,display) => {
+display(await(
+d3.format(".2f")(bolivianos / officialRates[tradeType])
+))
+}});
+
+define({id: "ab58df6b", mode: "inline", inputs: ["d3","officialRates","tradeType","selected","display"], body: async (d3,officialRates,tradeType,selected,display) => {
+display(await(
+(d3.format(".2%")(1 - (officialRates[tradeType] / selected.median)))
+))
+}});
+
 </script>
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
-<link rel="stylesheet" href="./_file/style.3383839f.css">
+<link rel="stylesheet" href="./_file/style.cfd9c7fd.css">
 <div class="observablehq observablehq--block"><!--:b81d0582:--></div>
-<div class="observablehq observablehq--block"><!--:0a9dda0f:--></div>
+<div class="observablehq observablehq--block"><!--:da5370ee:--></div>
 <div class="observablehq observablehq--block"><!--:2e291c05:--></div>
 <div class="observablehq observablehq--block"><!--:cb11314c:--></div>
-<div class="observablehq observablehq--block"><!--:3740d280:--></div>
+<div class="observablehq observablehq--block"><!--:feb799cc:--></div>
+<div class="observablehq observablehq--block"><!--:3bf90eb5:--></div>
+<div class="observablehq observablehq--block"><!--:01ba4719:--></div>
 <div class="title">Dólar en Bolivia</div>
 <div class="options">
     <observablehq-loading></observablehq-loading><!--:9cf6dfe6:-->
@@ -129,6 +171,21 @@ plot
 </div>
 <div class="card">
     <observablehq-loading></observablehq-loading><!--:0f3850ab:-->
+</div>
+<div class="explainer">
+    <div>
+        Bs. <observablehq-loading></observablehq-loading><!--:02aa75dd:-->
+        <span> equivalen a </span>
+        <span class="underlined"><observablehq-loading></observablehq-loading><!--:8ae2adc8:--> Dólares</span>,
+    </div>
+    <div>
+        <span>que al tipo de cambio oficial serían</span>
+        <span class="underlined"><observablehq-loading></observablehq-loading><!--:b8ded2fe:--> Dólares</span>.
+    </div>
+    <div>
+        <span>Una devaluación del </span>
+        <span class="underlined"><observablehq-loading></observablehq-loading><!--:ab58df6b:--></span>.
+    </div>
 </div>
 <div class="source">
     <div>

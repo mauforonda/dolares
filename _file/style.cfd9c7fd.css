@@ -5,6 +5,12 @@
     --figures: #34a853;
 }
 
+body {
+    font-family: "Libre Franklin", sans-serif;
+    font-optical-sizing: auto;
+    font-style: normal;
+}
+
 .title {
     font-family: "Playfair Display", serif;
     font-optical-sizing: auto;
@@ -34,7 +40,7 @@
         label {
             margin: 0px;
             padding: 10px;
-            
+
             input[type="radio"] {
                 font-family: "Libre Franklin", sans-serif;
                 font-optical-sizing: auto;
@@ -42,7 +48,6 @@
                 margin: 0;
                 appearance: none;
             }
-
         }
 
         label:has(input[type="radio"]:checked) {
@@ -51,14 +56,9 @@
             border: 1px solid var(--base);
         }
     }
-
-
 }
 
 .observation {
-    font-family: "Libre Franklin", sans-serif;
-    font-optical-sizing: auto;
-    font-style: normal;
     font-size: 15px;
     display: flex;
     flex-direction: column;
@@ -113,15 +113,13 @@
 }
 
 .source {
-    font-family: "Libre Franklin", sans-serif;
-    font-optical-sizing: auto;
-    font-style: normal;
+    opacity: .7;
     display: flex;
     flex-direction: row;
     justify-content: center;
     align-items: center;
-    margin: 2rem;
-    font-size: .6em;
+    margin: 6em 0 2rem 0;
+    font-size: 0.6em;
     color: var(--base);
     gap: 1rem;
 
@@ -137,7 +135,43 @@
     }
 
     .annotation {
-        opacity: .8;
-        /* font-size: .9em; */
+        opacity: 0.8;
+    }
+}
+
+.explainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 2rem;
+    font-size: 0.6em;
+    gap: .8rem;
+
+    input[type="number"] {
+        margin: 0 5px;
+        padding: 5px;
+        text-align: center;
+        background-color: var(--theme-background-a);
+        border-radius: 5px;
+        border: 1px solid var(--base);
+        appearance: textfield;
+    }
+
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+    }
+
+    .underlined {
+        margin: 0 3px;
+        text-decoration: underline 1px dotted var(--figures);
+        text-underline-offset:5px;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --base: #b6b6b6;
     }
 }
