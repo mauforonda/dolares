@@ -139,9 +139,9 @@ display(await(
 ))
 }});
 
-define({id: "b8ded2fe", mode: "inline", inputs: ["d3","bolivianos","officialRates","tradeType","display"], body: async (d3,bolivianos,officialRates,tradeType,display) => {
+define({id: "816b3e29", mode: "inline", inputs: ["bolivianos","d3","officialRates","tradeType","display"], body: async (bolivianos,d3,officialRates,tradeType,display) => {
 display(await(
-d3.format(".2f")(bolivianos / officialRates[tradeType])
+bolivianos ? d3.format(".2f")(bolivianos / officialRates[tradeType]) : "🤷" 
 ))
 }});
 
@@ -154,7 +154,7 @@ display(await(
 </script>
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
-<link rel="stylesheet" href="./_file/style.cfd9c7fd.css">
+<link rel="stylesheet" href="./_file/style.6bd44a04.css">
 <div class="observablehq observablehq--block"><!--:b81d0582:--></div>
 <div class="observablehq observablehq--block"><!--:da5370ee:--></div>
 <div class="observablehq observablehq--block"><!--:2e291c05:--></div>
@@ -180,7 +180,7 @@ display(await(
     </div>
     <div>
         <span>que al tipo de cambio oficial serían</span>
-        <span class="underlined"><observablehq-loading></observablehq-loading><!--:b8ded2fe:--> Dólares</span>.
+        <span class="underlined"><observablehq-loading></observablehq-loading><!--:816b3e29:--> Dólares</span>.
     </div>
     <div>
         <span>Una devaluación del </span>
