@@ -58,7 +58,7 @@ def checkPrices(fiat, asset, tradeType, rows=20, max_retries=3, timeout=10):
 
     page = 1
     prices = []
-    tradeable = []
+    tradable = []
 
     while True:
         params = makeParameters(fiat, asset, tradeType, page, rows)
@@ -69,7 +69,7 @@ def checkPrices(fiat, asset, tradeType, rows=20, max_retries=3, timeout=10):
         )
 
         prices.extend([float(entry["adv"]["price"]) for entry in response_data["data"]])
-        tradeable.extend(
+        tradable.extend(
             [float(entry["adv"]["tradableQuantity"]) for entry in response_data["data"]]
         )
 
@@ -79,23 +79,18 @@ def checkPrices(fiat, asset, tradeType, rows=20, max_retries=3, timeout=10):
             page += 1
 
     return dict(
-        low=round(min(prices), 2),
-        high=round(max(prices), 2),
-        median=round(statistics.median(prices), 2),
+        low=min(prices),
+        high=max(prices),
+        median=statistics.median(prices),
         offers=len(prices),
-        tradeable=round(sum(tradeable), 2),
+        tradable_asset=sum(tradable),
+        vwap=sum([price * quantity for price, quantity in zip(prices, tradable)]) / sum(tradable), # volume weighted aveage price
     )
 
 
 def appendPrices(prices, filename, timestamp):
-    row = {
-        "timestamp": timestamp,
-        "low": prices["low"],
-        "high": prices["high"],
-        "median": prices["median"],
-        "offers": prices["offers"],
-        "tradeable": prices["tradeable"],
-    }
+
+    row = {**{"timestamp": timestamp}, **{i[0]: round(i[1], 2) for i in prices.items()}}
 
     file_exists = True
     try:
@@ -106,7 +101,7 @@ def appendPrices(prices, filename, timestamp):
 
     with open(filename, "a", newline="") as f:
         writer = csv.DictWriter(
-            f, fieldnames=["timestamp", "low", "high", "median", "offers", "tradeable"]
+            f, fieldnames=row.keys()
         )
         if not file_exists:
             writer.writeheader()
