@@ -56,6 +56,12 @@ def checkPrices(fiat, asset, tradeType, rows=20, max_retries=3, timeout=10):
             else:
                 raise Exception(f"Max retries reached. Last error: {str(e)}")
 
+    def mode(prices):
+        counts = {}
+        for i in prices:
+            counts[i] = counts.get(i, 0) + 1
+        return max(counts, key=counts.get)
+
     page = 1
     prices = []
     tradable = []
@@ -82,9 +88,8 @@ def checkPrices(fiat, asset, tradeType, rows=20, max_retries=3, timeout=10):
         low=min(prices),
         high=max(prices),
         median=statistics.median(prices),
-        offers=len(prices),
-        tradable_asset=sum(tradable),
         vwap=sum([price * quantity for price, quantity in zip(prices, tradable)]) / sum(tradable), # volume weighted aveage price
+        naive=mode(prices[:len(prices)//10]) # the mode among the bottom (BUY) or top (SELL) decile
     )
 
 
@@ -116,7 +121,7 @@ for tradeType in ["BUY", "SELL"]:
         appendPrices(prices, f"{tradeType.lower()}.csv", timestamp)
 
         print(
-            f"{tradeType}: {prices["offers"]} offers indexed in {time.time() - start:.2f} seconds"
+            f"{tradeType}: {time.time() - start:.2f} seconds"
         )
 
     except Exception as e:

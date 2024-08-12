@@ -2,6 +2,7 @@
 
 ```js
 import { drawPlot, displayObservation } from "./components/plot.js";
+const campo_precio = "median"
 ```
 
 ```js
@@ -22,13 +23,13 @@ const data = d3.csv(`${github}/${tradeType}.csv`, d3.autoType);
 ```
 
 ```js
-const plot = drawPlot(data, width);
+const plot = drawPlot(data, width, campo_precio);
 const observation = Generators.input(plot);
 ```
 
 ```js
 const selected = observation ? observation : data.slice(-1)[0];
-const plotHeader = displayObservation(selected);
+const plotHeader = displayObservation(selected, campo_precio);
 ```
 
 ```js
@@ -38,10 +39,6 @@ const bolivianosInput = Inputs.bind(
     bolivianosInitiate
 );
 const bolivianos = Generators.input(bolivianosInput);
-```
-
-```js
-
 ```
 
 <div class="title">Dólar en Bolivia</div>
@@ -62,7 +59,7 @@ const bolivianos = Generators.input(bolivianosInput);
     <div>
         Bs. ${bolivianosInput}
         <span> equivalen a </span>
-        <span class="underlined">${ bolivianos ? d3.format(".2f")(bolivianos / selected.median) : "🤷" } Dólares</span>,
+        <span class="underlined">${ bolivianos ? d3.format(".2f")(bolivianos / selected[campo_precio]) : "🤷" } Dólares</span>,
     </div>
     <div>
         <span>que al tipo de cambio oficial serían</span>
@@ -70,7 +67,7 @@ const bolivianos = Generators.input(bolivianosInput);
     </div>
     <div>
         <span>Una devaluación del </span>
-        <span class="underlined">${(d3.format(".2%")(1 - (officialRates[tradeType] / selected.median)))}</span>.
+        <span class="underlined">${(d3.format(".2%")(1 - (officialRates[tradeType] / selected[campo_precio])))}</span>.
     </div>
 </div>
 

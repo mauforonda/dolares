@@ -11,7 +11,7 @@ const customFormat = () => {
         const day = d.getDate();
         const month = monthFormat(d.getMonth());
         const year = d.getFullYear();
-        const monthString = `${month}\n${year}`
+        const monthString = `${month}\n${year}`;
 
         if (!years.has(year)) {
             years.add(year);
@@ -26,22 +26,23 @@ const customFormat = () => {
     };
 };
 
-function withGradient({ color, limit, id = "gradient" }, callback) {
+function withGradient({ color, id = "gradient" }, callback) {
     return [
         callback(`url(#${id})`),
         () => svg`<defs>
         <linearGradient id=${id} gradientTransform="rotate(90)">
           <stop offset=0% stop-color=${color} stop-opacity=0.3 />
-          <stop offset=${limit}% stop-color=${color} stop-opacity=0 />
+          <stop offset=100% stop-color=${color} stop-opacity=0 />
         </linearGradient>
       </defs>`,
     ];
 }
 
-export function drawPlot(data, width) {
+export function drawPlot(data, width, campo_precio) {
+    data = data.filter((d) => d[campo_precio]);
     const hours =
         (data.slice(-1)[0].timestamp - data[0].timestamp) / (1000 * 60 * 60);
-    const hoursFit = (width / hours) > 3
+    const hoursFit = width / hours > 3;
 
     const colors = {
         base: "#a3a3a3",
@@ -49,18 +50,12 @@ export function drawPlot(data, width) {
     };
 
     const [min, max] = data.reduce(
-        ([min, max], { median }) => [
-            Math.min(min, median),
-            Math.max(max, median),
+        ([min, max], d) => [
+            Math.min(min, d[campo_precio]),
+            Math.max(max, d[campo_precio]),
         ],
         [Infinity, -Infinity]
     );
-
-    const lowMin = data.reduce(
-        (lowLimit, { low }) => Math.min(lowLimit, low),
-        Infinity
-    );
-    const lowLimit = (max - min * 0.97) / (max - lowMin);
 
     const scale = {
         tickSize: 0,
@@ -76,7 +71,7 @@ export function drawPlot(data, width) {
 
     const dotMedian = {
         x: "timestamp",
-        y: "median",
+        y: campo_precio,
     };
 
     return Plot.plot({
@@ -94,17 +89,21 @@ export function drawPlot(data, width) {
         y: {
             ...scale,
             axis: "right",
+            zero: false,
+            clamp: true,
             domain: [min * 0.97, max * 1.03],
         },
         marks: [
-            hoursFit ? Plot.axisX({
-                tickSize: 4,
-                stroke: colors.base,
-                ticks: "hour",
-                strokeOpacity: 0.5,
-                tickFormat: "",
-                filter: (d) => d.getHours() > 0,
-            }) : null,
+            hoursFit
+                ? Plot.axisX({
+                      tickSize: 4,
+                      stroke: colors.base,
+                      ticks: "hour",
+                      strokeOpacity: 0.5,
+                      tickFormat: "",
+                      filter: (d) => d.getHours() > 0,
+                  })
+                : null,
             Plot.axisX({
                 tickSize: 8,
                 stroke: colors.base,
@@ -114,7 +113,7 @@ export function drawPlot(data, width) {
             }),
             Plot.gridY({}),
             withGradient(
-                { color: colors.figures, limit: (lowLimit * 100) / 2 },
+                { color: colors.figures},
                 (fill) =>
                     Plot.areaY(data, {
                         ...dotMedian,
@@ -170,7 +169,7 @@ export function drawPlot(data, width) {
     });
 }
 
-export function displayObservation(observation) {
+export function displayObservation(observation, campo_precio) {
     const numberFormat = format(".2f");
     const timeFormat = Intl.DateTimeFormat("es-BO", {
         month: "long",
@@ -189,7 +188,9 @@ export function displayObservation(observation) {
             <div class="median">
                 <div class="medianValue">
                     <div class="currency">Bs.</div>
-                    <div class="value">${numberFormat(observation.median)}</div>
+                    <div class="value">
+                        ${numberFormat(observation[campo_precio])}
+                    </div>
                 </div>
                 <div class="annotation">por 1 Dólar</div>
             </div>
