@@ -12,7 +12,7 @@
 <link rel="modulepreload" href="./_observablehq/client.js">
 <link rel="modulepreload" href="./_observablehq/runtime.js">
 <link rel="modulepreload" href="./_observablehq/stdlib.js">
-<link rel="modulepreload" href="./_import/components/plot.e3ba285f.js">
+<link rel="modulepreload" href="./_import/components/plot.f56033e3.js">
 <link rel="modulepreload" href="./_npm/@observablehq/plot@0.6.16/_esm.js">
 <link rel="modulepreload" href="./_npm/htl@0.3.1/_esm.js">
 <link rel="modulepreload" href="./_npm/d3@7.9.0/_esm.js">
@@ -58,13 +58,15 @@
 
 import {define} from "./_observablehq/client.js";
 
-define({id: "c30a6e6f", outputs: ["drawPlot","displayObservation","campo_precio"], body: async () => {
-const {drawPlot, displayObservation} = await import("./_import/components/plot.e3ba285f.js");
-const campo_precio = "median"
-return {drawPlot,displayObservation,campo_precio};
+define({id: "64e1cd16", inputs: ["URLSearchParams"], outputs: ["drawPlot","displayObservation","param","campo_precio"], body: async (URLSearchParams) => {
+const {drawPlot, displayObservation} = await import("./_import/components/plot.f56033e3.js");
+const param = new URLSearchParams(window.location.search).get("precio");
+const campo_precio =
+    param && ["median", "vwap", "naive"].includes(param) ? param : "median";
+return {drawPlot,displayObservation,param,campo_precio};
 }});
 
-define({id: "da5370ee", inputs: ["Inputs","Generators"], outputs: ["tradeTypes","tradeType","officialRates"], body: (Inputs,Generators) => {
+define({id: "496122d0", inputs: ["Inputs","Generators"], outputs: ["tradeTypes","tradeType","officialRates"], body: (Inputs,Generators) => {
 const tradeTypes = Inputs.radio(["buy", "sell"], {
     format: (d) => (d == "buy" ? "compra" : "venta"),
     value: "buy",
@@ -72,8 +74,8 @@ const tradeTypes = Inputs.radio(["buy", "sell"], {
 const tradeType = Generators.input(tradeTypes);
 const officialRates = {
     buy: 6.86,
-    sell: 6.96
-}
+    sell: 6.96,
+};
 return {tradeTypes,tradeType,officialRates};
 }});
 
@@ -150,9 +152,9 @@ display(await(
 </script>
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
-<link rel="stylesheet" href="./_file/style.36311971.css">
-<div class="observablehq observablehq--block"><!--:c30a6e6f:--></div>
-<div class="observablehq observablehq--block"><!--:da5370ee:--></div>
+<link rel="stylesheet" href="./_file/style.7898b834.css">
+<div class="observablehq observablehq--block"><!--:64e1cd16:--></div>
+<div class="observablehq observablehq--block"><!--:496122d0:--></div>
 <div class="observablehq observablehq--block"><!--:2e291c05:--></div>
 <div class="observablehq observablehq--block"><!--:37ae3635:--></div>
 <div class="observablehq observablehq--block"><!--:5bfc0346:--></div>
@@ -192,5 +194,6 @@ display(await(
         <span><a href="mailto:mauriforonda@gmail.com" target="_blank" rel="noopener noreferrer">Mauricio Foronda</a></span>
         <span class="annotation">creación</span>
     </div>
-</div></main>
+</div>
+</main>
 </div>
