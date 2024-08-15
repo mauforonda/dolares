@@ -42,6 +42,7 @@ export function drawPlot(data, width, campo_precio) {
     data = data.filter((d) => d[campo_precio]);
     const hours =
         (data.slice(-1)[0].timestamp - data[0].timestamp) / (1000 * 60 * 60);
+    const days = hours / 24
     const hoursFit = width / hours > 3;
 
     const colors = {
@@ -101,13 +102,13 @@ export function drawPlot(data, width, campo_precio) {
                       ticks: "hour",
                       strokeOpacity: 0.5,
                       tickFormat: "",
-                      filter: (d) => d.getHours() > 0,
+                    //   filter: (d) => d.getHours() > 0,
                   })
                 : null,
             Plot.axisX({
-                tickSize: 8,
+                tickSize: 0,
                 stroke: colors.base,
-                ticks: 5,
+                ticks: days < 10 ? days : 10,
                 tickFormat: customFormat(),
                 lineHeight: 1.2,
             }),

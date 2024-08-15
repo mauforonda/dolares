@@ -2,7 +2,9 @@
 
 ```js
 import { drawPlot, displayObservation } from "./components/plot.js";
-const campo_precio = "median"
+const param = new URLSearchParams(window.location.search).get("precio");
+const campo_precio =
+    param && ["median", "vwap", "naive"].includes(param) ? param : "median";
 ```
 
 ```js
@@ -13,8 +15,8 @@ const tradeTypes = Inputs.radio(["buy", "sell"], {
 const tradeType = Generators.input(tradeTypes);
 const officialRates = {
     buy: 6.86,
-    sell: 6.96
-}
+    sell: 6.96,
+};
 ```
 
 ```js
