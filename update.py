@@ -113,7 +113,6 @@ def checkPrices(fiat, asset, tradeType, rows=20, max_retries=3, timeout=10):
         else:
             page += 1
 
-    ads[0]["adv"]["price"] = 7.1
     prices = [float(ad["adv"]["price"]) for ad in ads]
     tradable = [float(ad["adv"]["tradableQuantity"]) for ad in ads]
     if tradeType == "BUY":
