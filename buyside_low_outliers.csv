@@ -1,3 +1,4 @@
 timestamp,price,tradable,min_amount,max_amount,advertiser_id,advertiser_name,orders,finish_rate,positive_feedback
 2024-08-16T20:49-04:00,7.1,53.8,60.0,130000.0,sef54ddb72adc3502b6c6cb41498a3fa0,CRIPTOSEGUROBOB,810,0.92,0.97
 2024-08-16T21:58-04:00,7.1,133.01,1000.0,200000.0,sc1699bbbc6cd3dc28e248c5cb3d84602,ALTAIR10k,2136,0.93,0.97
+2024-08-16T22:34-04:00,7.1,23.11,55.0,130000.0,s0cf64d37238834678c6f538c60ed84a5,,12,0.75,1.0
