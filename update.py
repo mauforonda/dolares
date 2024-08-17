@@ -62,9 +62,37 @@ def checkPrices(fiat, asset, tradeType, rows=20, max_retries=3, timeout=10):
             counts[i] = counts.get(i, 0) + 1
         return max(counts, key=counts.get)
 
+    def identifyOutliers(ads, prices):
+        def formatFloat(i):
+            return round(float(i), 2)
+
+        def formatOutlier(outlier):
+            return dict(
+                price=formatFloat(outlier["adv"]["price"]),
+                tradable=formatFloat(outlier["adv"]["tradableQuantity"]),
+                min_amount=formatFloat(outlier["adv"]["minSingleTransAmount"]),
+                max_amount=formatFloat(outlier["adv"]["maxSingleTransAmount"]),
+                advertiser_id=outlier["advertiser"]["userNo"],
+                advertiser_name=outlier["advertiser"]["nickName"],
+                orders=int(outlier["advertiser"]["monthOrderCount"]),
+                finish_rate=formatFloat(outlier["advertiser"]["monthFinishRate"]),
+                positive_feedback=formatFloat(outlier["advertiser"]["positiveRate"]),
+            )
+
+        outliers = []
+        sorted_prices = sorted(prices)
+        q = (len(sorted_prices) + 1) // 4
+        bound = sorted_prices[q] - (1.5 * (sorted_prices[q * 3] - sorted_prices[q]))
+        outlier_prices = [i for i in sorted_prices if i < bound]
+        if outlier_prices:
+            for price in outlier_prices:
+                outliers.extend(
+                    [formatOutlier(ad) for ad in ads if ad["adv"]["price"] == price]
+                )
+        return outliers
+
     page = 1
-    prices = []
-    tradable = []
+    ads = []
 
     while True:
         params = makeParameters(fiat, asset, tradeType, page, rows)
@@ -74,29 +102,42 @@ def checkPrices(fiat, asset, tradeType, rows=20, max_retries=3, timeout=10):
             "https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search", data
         )
 
-        prices.extend([float(entry["adv"]["price"]) for entry in response_data["data"]])
-        tradable.extend(
-            [float(entry["adv"]["tradableQuantity"]) for entry in response_data["data"]]
-        )
+        ads.extend(response_data["data"])
+        # prices.extend([float(entry["adv"]["price"]) for entry in response_data["data"]])
+        # tradable.extend(
+        #     [float(entry["adv"]["tradableQuantity"]) for entry in response_data["data"]]
+        # )
 
-        if len(prices) == response_data["total"]:
+        if len(ads) == response_data["total"]:
             break
         else:
             page += 1
 
-    return dict(
-        low=min(prices),
-        high=max(prices),
-        median=statistics.median(prices),
-        vwap=sum([price * quantity for price, quantity in zip(prices, tradable)]) / sum(tradable), # volume weighted aveage price
-        naive=mode(prices[:len(prices)//10]) # the mode among the bottom (BUY) or top (SELL) decile
+    ads[0]["adv"]["price"] = 7.1
+    prices = [float(ad["adv"]["price"]) for ad in ads]
+    tradable = [float(ad["adv"]["tradableQuantity"]) for ad in ads]
+    if tradeType == "BUY":
+        outliers = identifyOutliers(ads, prices)
+    else:
+        outliers = []
+
+
+    return (
+        dict(
+            low=min(prices),
+            high=max(prices),
+            median=statistics.median(prices),
+            vwap=sum([price * quantity for price, quantity in zip(prices, tradable)])
+            / sum(tradable),  # volume weighted aveage price
+            naive=mode(
+                prices[: len(prices) // 10]
+            ),  # the mode among the bottom (BUY) or top (SELL) decile
+        ),
+        outliers,
     )
 
 
-def appendPrices(prices, filename, timestamp):
-
-    row = {**{"timestamp": timestamp}, **{i[0]: round(i[1], 2) for i in prices.items()}}
-
+def appendFile(filename, rows):
     file_exists = True
     try:
         with open(filename, "r") as f:
@@ -105,24 +146,32 @@ def appendPrices(prices, filename, timestamp):
         file_exists = False
 
     with open(filename, "a", newline="") as f:
-        writer = csv.DictWriter(
-            f, fieldnames=row.keys()
-        )
+        writer = csv.DictWriter(f, fieldnames=rows[0].keys())
         if not file_exists:
             writer.writeheader()
-        writer.writerow(row)
+        for row in rows:
+            writer.writerow(row)
+
+
+def appendPrices(prices, filename, timestamp):
+    row = {**{"timestamp": timestamp}, **{i[0]: round(i[1], 2) for i in prices.items()}}
+    appendFile(filename, [row])
+
+
+def appendOutliers(outliers, filename, timestamp):
+    rows = [{**{"timestamp": timestamp}, **outlier} for outlier in outliers]
+    appendFile(filename, rows)
 
 
 for tradeType in ["BUY", "SELL"]:
     try:
         start = time.time()
         timestamp = datetime.now(ZoneInfo(timezone)).isoformat(timespec="minutes")
-        prices = checkPrices(fiat=fiat, asset=asset, tradeType=tradeType)
+        prices, outliers = checkPrices(fiat=fiat, asset=asset, tradeType=tradeType)
         appendPrices(prices, f"{tradeType.lower()}.csv", timestamp)
-
-        print(
-            f"{tradeType}: {time.time() - start:.2f} seconds"
-        )
+        if outliers:
+            appendOutliers(outliers, "buyside_low_outliers.csv", timestamp)
+        print(f"{tradeType}: {time.time() - start:.2f} seconds")
 
     except Exception as e:
         print(f"An error occurred: {str(e)}")
