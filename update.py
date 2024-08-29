@@ -103,11 +103,6 @@ def checkPrices(fiat, asset, tradeType, rows=20, max_retries=3, timeout=10):
         )
 
         ads.extend(response_data["data"])
-        # prices.extend([float(entry["adv"]["price"]) for entry in response_data["data"]])
-        # tradable.extend(
-        #     [float(entry["adv"]["tradableQuantity"]) for entry in response_data["data"]]
-        # )
-
         if len(ads) == response_data["total"]:
             break
         else:
@@ -131,6 +126,10 @@ def checkPrices(fiat, asset, tradeType, rows=20, max_retries=3, timeout=10):
             naive=mode(
                 prices[: len(prices) // 10]
             ),  # the mode among the bottom (BUY) or top (SELL) decile
+        ),
+        dict(
+            offers=len(prices),
+            tradable=sum(tradable)
         ),
         outliers,
     )
@@ -166,8 +165,9 @@ for tradeType in ["BUY", "SELL"]:
     try:
         start = time.time()
         timestamp = datetime.now(ZoneInfo(timezone)).isoformat(timespec="minutes")
-        prices, outliers = checkPrices(fiat=fiat, asset=asset, tradeType=tradeType)
+        prices, geek_indicators, outliers = checkPrices(fiat=fiat, asset=asset, tradeType=tradeType)
         appendPrices(prices, f"{tradeType.lower()}.csv", timestamp)
+        appendPrices(geek_indicators, f"{tradeType.lower()}_extra.csv", timestamp)
         if outliers:
             appendOutliers(outliers, "buyside_low_outliers.csv", timestamp)
         print(f"{tradeType}: {time.time() - start:.2f} seconds")
