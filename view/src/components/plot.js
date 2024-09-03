@@ -3,26 +3,34 @@ import { html, svg } from "npm:htl";
 import { format } from "npm:d3";
 
 const customFormat = () => {
-    const years = new Set();
-    const months = new Set();
+    const seenYears = new Set();
+    const seenMonthYears = new Set();
 
-    const monthFormat = Plot.formatMonth("es-BO");
-    return (d) => {
-        const day = d.getDate();
-        const month = monthFormat(d.getMonth());
-        const year = d.getFullYear();
-        const monthString = `${month}\n${year}`;
+    const formatMonth = Plot.formatMonth("es-BO");
+    const formatDay = format("d");
 
-        if (!years.has(year)) {
-            years.add(year);
-            months.add(monthString);
-            return monthString;
-        } else if (!months.has(monthString)) {
-            months.add(monthString);
-            return month;
-        } else {
-            return day;
+    return (date) => {
+        const year = date.getFullYear();
+        const month = formatMonth(date.getMonth());
+        const day = formatDay(date.getDate());
+        const monthYear = `${month}\n${year}`;
+
+        if (!seenYears.has(year)) {
+            seenYears.add(year);
+            seenMonthYears.add(monthYear);
+            if (seenYears.size > 1) {
+                return `${month}\n${year}`;
+            } else {
+                return `${day}\n${month}`;
+            }
         }
+
+        if (!seenMonthYears.has(monthYear)) {
+            seenMonthYears.add(monthYear);
+            return `${day}\n${month}`;
+        }
+
+        return day;
     };
 };
 
@@ -42,7 +50,7 @@ export function drawPlot(data, width, campo_precio) {
     data = data.filter((d) => d[campo_precio]);
     const hours =
         (data.slice(-1)[0].timestamp - data[0].timestamp) / (1000 * 60 * 60);
-    const days = hours / 24
+    const days = hours / 24;
     const hoursFit = width / hours > 3;
 
     const colors = {
@@ -102,25 +110,23 @@ export function drawPlot(data, width, campo_precio) {
                       ticks: "hour",
                       strokeOpacity: 0.5,
                       tickFormat: "",
-                    //   filter: (d) => d.getHours() > 0,
+                      //   filter: (d) => d.getHours() > 0,
                   })
                 : null,
             Plot.axisX({
                 tickSize: 0,
                 stroke: colors.base,
-                ticks: days < 10 ? days : 10,
+                ticks: days < 8 ? days : 8,
                 tickFormat: customFormat(),
                 lineHeight: 1.2,
             }),
             Plot.gridY({}),
-            withGradient(
-                { color: colors.figures},
-                (fill) =>
-                    Plot.areaY(data, {
-                        ...dotMedian,
-                        fill,
-                        curve: "basis",
-                    })
+            withGradient({ color: colors.figures }, (fill) =>
+                Plot.areaY(data, {
+                    ...dotMedian,
+                    fill,
+                    curve: "basis",
+                })
             ),
             Plot.line(data, {
                 ...dotMedian,
