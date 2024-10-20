@@ -110,6 +110,8 @@ def checkPrices(fiat, asset, tradeType, rows=20, max_retries=3, timeout=10):
 
     prices = [float(ad["adv"]["price"]) for ad in ads]
     tradable = [float(ad["adv"]["tradableQuantity"]) for ad in ads]
+    total = sum(tradable)
+
     if tradeType == "BUY":
         outliers = identifyOutliers(ads, prices)
     else:
@@ -129,7 +131,8 @@ def checkPrices(fiat, asset, tradeType, rows=20, max_retries=3, timeout=10):
         ),
         dict(
             offers=len(prices),
-            tradable=sum(tradable)
+            tradable=sum(tradable),
+            herfindahl_hirschman=sum([(i/total) ** 2 for i in tradable]) * 100
         ),
         outliers,
     )
