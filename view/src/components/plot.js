@@ -1,8 +1,10 @@
 import * as Plot from "npm:@observablehq/plot";
+
 import { html, svg } from "npm:htl";
+
 import { format } from "npm:d3";
 
-const customFormat = () => {
+const timeTickFormat = () => {
     const seenYears = new Set();
     const seenMonthYears = new Set();
 
@@ -65,10 +67,26 @@ export function drawPlot(data, width, campo_precio) {
         ],
         [Infinity, -Infinity]
     );
+    const yDomain = [min * 0.95, max * 1.03];
 
-    const scale = {
+    const tickScale = {
         tickSize: 0,
         label: null,
+    };
+
+    const x = {
+        ...tickScale,
+        type: "time",
+    }
+    const yTicksCount = (max - min) * 5 // N ticks per unit
+    const y = {
+        ...tickScale,
+        axis: "right",
+        clamp: true,
+        domain: yDomain,
+        ticks: yTicksCount,
+        tickFormat: ".1f",
+        zero: false,
     };
 
     const dotLimit = {
@@ -84,6 +102,7 @@ export function drawPlot(data, width, campo_precio) {
     };
 
     return Plot.plot({
+        height: 600,
         marginTop: 20,
         marginLeft: 5,
         marginBottom: 35,
@@ -91,17 +110,8 @@ export function drawPlot(data, width, campo_precio) {
             color: colors.base,
         },
         width,
-        x: {
-            ...scale,
-            type: "time",
-        },
-        y: {
-            ...scale,
-            axis: "right",
-            zero: false,
-            clamp: true,
-            domain: [min * 0.97, max * 1.03],
-        },
+        x,
+        y,
         marks: [
             hoursFit
                 ? Plot.axisX({
@@ -117,10 +127,12 @@ export function drawPlot(data, width, campo_precio) {
                 tickSize: 0,
                 stroke: colors.base,
                 ticks: days < 8 ? days : 8,
-                tickFormat: customFormat(),
+                tickFormat: timeTickFormat(),
                 lineHeight: 1.2,
             }),
-            Plot.gridY({}),
+            Plot.gridY({
+                ticks: yTicksCount,
+            }),
             withGradient({ color: colors.figures }, (fill) =>
                 Plot.areaY(data, {
                     ...dotMedian,
