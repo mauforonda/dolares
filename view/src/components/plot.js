@@ -67,7 +67,7 @@ export function drawPlot(data, width, campo_precio) {
         ],
         [Infinity, -Infinity]
     );
-    const yDomain = [min * 0.95, max * 1.03];
+    const yDomain = [min * 0.97, max * 1.03];
 
     const tickScale = {
         tickSize: 0,
@@ -78,7 +78,7 @@ export function drawPlot(data, width, campo_precio) {
         ...tickScale,
         type: "time",
     }
-    const yTicksCount = (max - min) * 5 // N ticks per unit
+    const yTicksCount = 10
     const y = {
         ...tickScale,
         axis: "right",
@@ -102,7 +102,7 @@ export function drawPlot(data, width, campo_precio) {
     };
 
     return Plot.plot({
-        height: 600,
+        height: 500,
         marginTop: 20,
         marginLeft: 5,
         marginBottom: 35,
