@@ -62,6 +62,36 @@ body {
     }
 }
 
+.dias {
+    form div {
+        background-color: var(--theme-background-b);
+        margin: 0;
+        align-items: center;
+        gap: 5px;
+        label {
+            font-size: .9em;
+            padding: 5px 7px !important;
+            background-color: var(--theme-background-b);
+            border: 1px solid var(--theme-foreground-faintest);
+            border-radius: 0;
+        }
+        label:has(input[type="radio"]:not(:checked)) {
+            color: var(--theme-foreground-faint);
+        }
+        label:has(input[type="radio"]:checked) {
+            background-color: var(--theme-background-a);
+            border: 1px solid var(--theme-foreground-faint);
+            border-radius: 0;
+        }
+        label:first-of-type {
+            border-radius: 5px 0 0 5px !important;
+        }
+        label:last-of-type {
+            border-radius: 0 5px 5px 0 !important;
+        }
+    }
+}
+
 .observation {
     font-size: 15px;
     display: flex;
