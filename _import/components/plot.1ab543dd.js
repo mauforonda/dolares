@@ -48,8 +48,12 @@ function withGradient({ color, id = "gradient" }, callback) {
     ];
 }
 
-export function drawPlot(data, width, campo_precio) {
-    data = data.filter((d) => d[campo_precio]);
+export function drawPlot(data, width, campo_precio, dias) {
+    const ahora = new Date();
+    const desde = new Date(ahora - dias * 86400000);
+
+    data = data.filter((d) => d[campo_precio] && d.timestamp >= desde);
+
     const hours =
         (data.slice(-1)[0].timestamp - data[0].timestamp) / (1000 * 60 * 60);
     const days = hours / 24;
@@ -77,8 +81,8 @@ export function drawPlot(data, width, campo_precio) {
     const x = {
         ...tickScale,
         type: "time",
-    }
-    const yTicksCount = 10
+    };
+    const yTicksCount = 10;
     const y = {
         ...tickScale,
         axis: "right",
