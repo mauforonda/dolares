@@ -85,16 +85,20 @@ const data = d3.csv(`${github}/${tradeType}.csv`, d3.autoType);
 return {github,data};
 }});
 
-define({id: "3819b8de", inputs: ["Inputs","Generators"], outputs: ["opcionesDias","timeRanges","timeRange"], body: (Inputs,Generators) => {
+define({id: "49575d12", inputs: ["Inputs","Generators"], outputs: ["opcionesDias","timeRanges","timeRange"], body: (Inputs,Generators) => {
 const opcionesDias = {
     "1e6": "todo",
-    "30": "1 mes",
-    "7": "1 semana",
+    // 180: "6 meses",
+    // 90: "3 meses",
+    30: "1 mes",
+    7: "1 semana",
 };
 const timeRanges = Inputs.radio(Object.keys(opcionesDias), {
     format: (d) => opcionesDias[d],
-    sort: (a,b) => {return Number(b) - Number(a)},
-    value: "1e6",
+    sort: (a, b) => {
+        return Number(b) - Number(a);
+    },
+    value: "30",
 });
 const timeRange = Generators.input(timeRanges);
 return {opcionesDias,timeRanges,timeRange};
@@ -240,7 +244,7 @@ selected.naive ? "y equivale a Bs. " + selected.naive : ""
 <div class="observablehq observablehq--block"><!--:d3eb5b51:--></div>
 <div class="observablehq observablehq--block"><!--:496122d0:--></div>
 <div class="observablehq observablehq--block"><!--:2e291c05:--></div>
-<div class="observablehq observablehq--block"><!--:3819b8de:--></div>
+<div class="observablehq observablehq--block"><!--:49575d12:--></div>
 <div class="observablehq observablehq--block"><!--:76d39a7f:--></div>
 <div class="observablehq observablehq--block"><!--:80ddf0d1:--></div>
 <div class="observablehq observablehq--block"><!--:3bf90eb5:--></div>
