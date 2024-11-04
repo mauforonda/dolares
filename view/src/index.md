@@ -2,8 +2,14 @@
 
 ```js
 import { drawPlot, displayObservation } from "./components/plot.js";
+
 const default_cotizacion = "median";
-const input_cotizacion = Inputs.input(default_cotizacion);
+const stored_cotizacion = localStorage.getItem("tipo-cotizacion");
+const selected_cotizacion = stored_cotizacion
+    ? stored_cotizacion
+    : default_cotizacion;
+
+const input_cotizacion = Inputs.input(selected_cotizacion);
 const tipo_cotizacion = Generators.input(input_cotizacion);
 ```
 
@@ -16,6 +22,15 @@ const tradeType = Generators.input(tradeTypes);
 const officialRates = {
     buy: 6.86,
     sell: 6.96,
+};
+
+const texto_cotizaciones = (cotizacion) => {
+    const opciones = {
+        median: "mediana de todos los precios listados",
+        vwap: "promedio ponderado por volumen",
+        naive: `valor más frecuente en el 10% de ofertas más bajo (compra) o alto (venta)`,
+    };
+    return opciones[cotizacion];
 };
 ```
 
@@ -67,38 +82,46 @@ function set(input, value) {
     input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
-function cambio_cotizacion(texto, cotizacion) {
+function cambio_cotizacion(cotizacion) {
+    const texto = texto_cotizaciones(cotizacion);
     const input_button = htl.html`<span class="cotizacion">${texto}</span>`;
-    if (cotizacion == default_cotizacion) {
+    if (cotizacion == selected_cotizacion) {
         input_button.classList.add("selected");
     }
     input_button.onclick = () => {
         set(input_cotizacion, cotizacion);
+        localStorage.setItem("tipo-cotizacion", cotizacion);
         document.querySelector(".selected").classList.remove("selected");
         input_button.classList.add("selected");
+        document.querySelector("#cotizacionSeleccionada").textContent = texto;
     };
     return input_button;
 }
 ```
 
-<div class="title">Dólar en Bolivia</div>
+<div id="titulo">Dólar en Bolivia</div>
 
-<div class="options">
+<div id="opcionesCompraVenta">
     ${tradeTypes}
 </div>
 
-<div class="plotHeader">
+<div id="precioValor">
     ${plotHeader}
 </div>
 
-<div class="card">
-    <div class="options dias">
+<div id="grafico" class="card">
+    <div id="opcionesTiempo">
         ${timeRanges}
     </div>
     ${plot}
+    <div id="graficoNota">
+        <div id="cotizacionSeleccionada">
+            ${texto_cotizaciones(selected_cotizacion)}
+        </div>
+    </div>
 </div>
 
-<div class="explainer">
+<div id="devaluacion">
     <div>
         Bs. ${bolivianosInput}
         <span> equivalen a </span>
@@ -114,7 +137,7 @@ function cambio_cotizacion(texto, cotizacion) {
     </div>
 </div>
 
-<div class="description">
+<div id="explicacion">
     <details open>
         <summary>¿De dónde salen estos números?</summary>
         <div class="content">
@@ -125,11 +148,11 @@ Sin embargo, este listado no incluye una cotización estimada de mercado o infor
 
 Ofrezco 3 opciones:
 
-${cambio_cotizacion("La mediana de todos los precios listados", "median")}</span>, que es una idea simple e intuitiva de la tendencia central en el mercado. Es el precio que muestro por defecto y equivale a Bs. ${selected.median}.
+La ${cambio_cotizacion("median")}, que es una idea simple e intuitiva de la tendencia central en el mercado. Es el precio que muestro por defecto y equivale a Bs. ${selected.median}.
 
-${cambio_cotizacion("El promedio ponderado por volumen", "vwap")}, que sería una estimación más correcta de la tendencia central ponderando cada precio listado por el monto que se ofrece. ${selected.vwap ? "Equivale a Bs. " + selected.vwap + "." : ""}
+El ${cambio_cotizacion("vwap")}, que sería una estimación más correcta de la tendencia central ponderando cada precio listado por el monto que se ofrece. ${selected.vwap ? "Equivale a Bs. " + selected.vwap + "." : ""}
 
-Estas opciones son aproximaciones de la tendencia central en el mercado. Pero alguien que quiera comprar o vender dólares probablemente busca valores más extremos. La tercera opción es ${cambio_cotizacion("el valor más frecuente en el 10% de ofertas más " + (tradeType == "buy" ? "bajas (para compra)" : "altas (para venta)"), "naive")}. Este valor representa la cotización de una oferta que se tomaría fácilmente en el mercado ${selected.naive ? "y equivale a Bs. " + selected.naive : ""}.
+Estas opciones son aproximaciones de la tendencia central en el mercado. Pero alguien que quiera comprar o vender dólares probablemente busca valores más extremos. La tercera opción es el ${cambio_cotizacion("naive")}. Este valor representa la cotización de una oferta que se tomaría fácilmente en el mercado ${selected.naive ? "y equivale a Bs. " + selected.naive : ""}.
 
 Comencé a estimar cada opción desde un momento distinto. Primero la mediana, luego el promedio ponderado y finalmente el valor extremo. Junto a estas estimaciones recojo el precio mínimo y máximo que se ofrece en el mercado. Puedes utilizar todos estos datos como quieras desde [el repositorio](https://github.com/mauforonda/dolares/), que se actualiza cada 30 minutos, más o menos.
 
@@ -138,14 +161,14 @@ Usualmente todo sale bien, pero a veces también meto la pata. ¿Notas un salto 
 </div>
 </details></div><div class="center">🪴</div>
 
-<div class="sources">
-    <div class="source">
+<div id="creditos">
+    <div class="credito">
         <span><a href="https://p2p.binance.com/en/trade/all-payments/USDT?fiat=BOB" target="_blank">Binance P2P</a></span>
-        <span class="annotation">fuente</span>
+        <span class="creditoNota">fuente</span>
     </div>
     <div>&</div>
-    <div class="source">
+    <div class="credito">
         <span><a href="mailto:mauriforonda@gmail.com">Mauricio Foronda</a></span>
-        <span class="annotation">creación</span>
+        <span class="creditoNota">creación</span>
     </div>
 </div>

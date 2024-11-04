@@ -136,6 +136,9 @@ export function drawPlot(data, width, campo_precio, dias) {
             }),
             Plot.gridY({
                 ticks: yTicksCount,
+                strokeDasharray: "1,3",
+                strokeOpacity: 1,
+                strokeWidth: .3
             }),
             withGradient({ color: colors.figures }, (fill) =>
                 Plot.areaY(data, {

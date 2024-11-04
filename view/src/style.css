@@ -11,7 +11,7 @@ body {
     font-style: normal;
 }
 
-.title {
+#titulo {
     font-family: "Playfair Display", serif;
     font-optical-sizing: auto;
     font-weight: 400;
@@ -22,7 +22,7 @@ body {
     line-height: 1;
 }
 
-.options {
+#opcionesCompraVenta, #opcionesTiempo {
     display: flex;
     align-items: end;
     justify-content: center;
@@ -62,14 +62,14 @@ body {
     }
 }
 
-.dias {
+#opcionesTiempo {
     form div {
         background-color: var(--theme-background-b);
         margin: 0;
         align-items: center;
         gap: 5px;
         label {
-            font-size: .9em;
+            font-size: 0.9em;
             padding: 5px 7px !important;
             background-color: var(--theme-background-b);
             border: 1px solid var(--theme-foreground-faintest);
@@ -146,7 +146,7 @@ body {
     }
 }
 
-.sources {
+#creditos {
     opacity: 0.8;
     display: flex;
     flex-direction: row;
@@ -157,7 +157,7 @@ body {
     color: var(--base);
     gap: 1rem;
 
-    div.source {
+    .credito {
         display: flex;
         flex-direction: column;
         text-align: center;
@@ -169,12 +169,12 @@ body {
         text-decoration: underline dotted;
     }
 
-    .annotation {
+    .creditoNota {
         opacity: 0.8;
     }
 }
 
-.explainer {
+#devaluacion {
     color: var(--base);
     font-size: 15px;
     display: flex;
@@ -210,7 +210,7 @@ body {
     }
 }
 
-.description {
+#explicacion {
     display: grid;
     text-underline-offset: 2px;
     font-size: 15px;
@@ -240,26 +240,42 @@ body {
             background-color: var(--theme-background-b);
             padding: 1px 15px;
             border-radius: 5px;
+            a {
+                color: var(--base);
+                text-decoration: 1px dotted underline var(--base);
+            }
+            a:hover,
+            summary:hover {
+                text-decoration: 1px dotted underline var(--figures);
+            }
+            
+            .cotizacion {
+                cursor: pointer;
+                font-weight: bold;
+                text-decoration: 1px dotted underline var(--base);
+            }
+            .cotizacion:hover,
+            .cotizacion.selected {
+                color: var(--figures);
+                text-decoration: 1px dotted underline var(--figures);
+            }
         }
-        a {
-            color: var(--base);
-            text-decoration: 1px dotted underline var(--base);
-        }
-        a:hover,
-        summary:hover {
-            text-decoration: 1px dotted underline var(--figures);
-        }
+    }
+}
 
-        .cotizacion {
-            cursor: pointer;
-            font-weight: bold;
-            text-decoration: 1px dotted underline var(--base);
-        }
-        .cotizacion:hover,
-        .cotizacion.selected {
-            color: var(--figures);
-            text-decoration: 1px dotted underline var(--figures);
-        }
+#graficoNota {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    #cotizacionSeleccionada {
+        padding: 15px 0 5px 0;
+        color: var(--theme-foreground-faint);
+        font-size: 0.8em;
+        margin: 10px 0 0 0;
+        text-align: center;
+        border-top: 1px dotted var(--theme-foreground-faintest);
+        font-style: italic;
     }
 }
 
