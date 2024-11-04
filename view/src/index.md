@@ -27,13 +27,17 @@ const data = d3.csv(`${github}/${tradeType}.csv`, d3.autoType);
 ```js
 const opcionesDias = {
     "1e6": "todo",
-    "30": "1 mes",
-    "7": "1 semana",
+    // 180: "6 meses",
+    // 90: "3 meses",
+    30: "1 mes",
+    7: "1 semana",
 };
 const timeRanges = Inputs.radio(Object.keys(opcionesDias), {
     format: (d) => opcionesDias[d],
-    sort: (a,b) => {return Number(b) - Number(a)},
-    value: "1e6",
+    sort: (a, b) => {
+        return Number(b) - Number(a);
+    },
+    value: "30",
 });
 const timeRange = Generators.input(timeRanges);
 ```
@@ -130,6 +134,7 @@ Estas opciones son aproximaciones de la tendencia central en el mercado. Pero al
 Comencé a estimar cada opción desde un momento distinto. Primero la mediana, luego el promedio ponderado y finalmente el valor extremo. Junto a estas estimaciones recojo el precio mínimo y máximo que se ofrece en el mercado. Puedes utilizar todos estos datos como quieras desde [el repositorio](https://github.com/mauforonda/dolares/), que se actualiza cada 30 minutos, más o menos.
 
 Usualmente todo sale bien, pero a veces también meto la pata. ¿Notas un salto extraño en los precios de compra entre el 16 y 17 de agosto? Ahí introduje un error en el código que contaminó datos por 12 horas, los cuales luego borré. Por favor sólo utiliza estos números como una referencia.
+
 </div>
 </details></div><div class="center">🪴</div>
 
