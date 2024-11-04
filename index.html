@@ -12,7 +12,7 @@
 <link rel="modulepreload" href="./_observablehq/client.js">
 <link rel="modulepreload" href="./_observablehq/runtime.js">
 <link rel="modulepreload" href="./_observablehq/stdlib.js">
-<link rel="modulepreload" href="./_import/components/plot.1ab543dd.js">
+<link rel="modulepreload" href="./_import/components/plot.66373579.js">
 <link rel="modulepreload" href="./_npm/@observablehq/plot@0.6.16/_esm.js">
 <link rel="modulepreload" href="./_npm/htl@0.3.1/_esm.js">
 <link rel="modulepreload" href="./_npm/d3@7.9.0/_esm.js">
@@ -58,15 +58,21 @@
 
 import {define} from "./_observablehq/client.js";
 
-define({id: "d3eb5b51", inputs: ["Inputs","Generators"], outputs: ["drawPlot","displayObservation","default_cotizacion","input_cotizacion","tipo_cotizacion"], body: async (Inputs,Generators) => {
-const {drawPlot, displayObservation} = await import("./_import/components/plot.1ab543dd.js");
+define({id: "7b417fa6", inputs: ["localStorage","Inputs","Generators"], outputs: ["drawPlot","displayObservation","default_cotizacion","stored_cotizacion","selected_cotizacion","input_cotizacion","tipo_cotizacion"], body: async (localStorage,Inputs,Generators) => {
+const {drawPlot, displayObservation} = await import("./_import/components/plot.66373579.js");
+
 const default_cotizacion = "median";
-const input_cotizacion = Inputs.input(default_cotizacion);
+const stored_cotizacion = localStorage.getItem("tipo-cotizacion");
+const selected_cotizacion = stored_cotizacion
+    ? stored_cotizacion
+    : default_cotizacion;
+
+const input_cotizacion = Inputs.input(selected_cotizacion);
 const tipo_cotizacion = Generators.input(input_cotizacion);
-return {drawPlot,displayObservation,default_cotizacion,input_cotizacion,tipo_cotizacion};
+return {drawPlot,displayObservation,default_cotizacion,stored_cotizacion,selected_cotizacion,input_cotizacion,tipo_cotizacion};
 }});
 
-define({id: "496122d0", inputs: ["Inputs","Generators"], outputs: ["tradeTypes","tradeType","officialRates"], body: (Inputs,Generators) => {
+define({id: "b69a6d76", inputs: ["Inputs","Generators"], outputs: ["tradeTypes","tradeType","officialRates","texto_cotizaciones"], body: (Inputs,Generators) => {
 const tradeTypes = Inputs.radio(["buy", "sell"], {
     format: (d) => (d == "buy" ? "compra" : "venta"),
     value: "buy",
@@ -76,7 +82,16 @@ const officialRates = {
     buy: 6.86,
     sell: 6.96,
 };
-return {tradeTypes,tradeType,officialRates};
+
+const texto_cotizaciones = (cotizacion) => {
+    const opciones = {
+        median: "mediana de todos los precios listados",
+        vwap: "promedio ponderado por volumen",
+        naive: `valor más frecuente en el 10% de ofertas más bajo (compra) o alto (venta)`,
+    };
+    return opciones[cotizacion];
+};
+return {tradeTypes,tradeType,officialRates,texto_cotizaciones};
 }});
 
 define({id: "2e291c05", inputs: ["d3","tradeType"], outputs: ["github","data"], body: (d3,tradeType) => {
@@ -126,21 +141,24 @@ const bolivianos = Generators.input(bolivianosInput);
 return {bolivianosInitiate,bolivianosInput,bolivianos};
 }});
 
-define({id: "fba75765", inputs: ["Event","htl","default_cotizacion","input_cotizacion"], outputs: ["set","cambio_cotizacion"], body: (Event,htl,default_cotizacion,input_cotizacion) => {
+define({id: "8b4f0959", inputs: ["Event","texto_cotizaciones","htl","selected_cotizacion","input_cotizacion","localStorage"], outputs: ["set","cambio_cotizacion"], body: (Event,texto_cotizaciones,htl,selected_cotizacion,input_cotizacion,localStorage) => {
 function set(input, value) {
     input.value = value;
     input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
-function cambio_cotizacion(texto, cotizacion) {
+function cambio_cotizacion(cotizacion) {
+    const texto = texto_cotizaciones(cotizacion);
     const input_button = htl.html`<span class="cotizacion">${texto}</span>`;
-    if (cotizacion == default_cotizacion) {
+    if (cotizacion == selected_cotizacion) {
         input_button.classList.add("selected");
     }
     input_button.onclick = () => {
         set(input_cotizacion, cotizacion);
+        localStorage.setItem("tipo-cotizacion", cotizacion);
         document.querySelector(".selected").classList.remove("selected");
         input_button.classList.add("selected");
+        document.querySelector("#cotizacionSeleccionada").textContent = texto;
     };
     return input_button;
 }
@@ -168,6 +186,12 @@ timeRanges
 define({id: "0f3850ab", mode: "inline", inputs: ["plot","display"], body: async (plot,display) => {
 display(await(
 plot
+))
+}});
+
+define({id: "db14ec10", mode: "inline", inputs: ["texto_cotizaciones","selected_cotizacion","display"], body: async (texto_cotizaciones,selected_cotizacion,display) => {
+display(await(
+texto_cotizaciones(selected_cotizacion)
 ))
 }});
 
@@ -201,9 +225,9 @@ selected[tipo_cotizacion]
 ))
 }});
 
-define({id: "f53500d7", mode: "inline", inputs: ["cambio_cotizacion","display"], body: async (cambio_cotizacion,display) => {
+define({id: "daaa1762", mode: "inline", inputs: ["cambio_cotizacion","display"], body: async (cambio_cotizacion,display) => {
 display(await(
-cambio_cotizacion("La mediana de todos los precios listados", "median")
+cambio_cotizacion("median")
 ))
 }});
 
@@ -213,9 +237,9 @@ selected.median
 ))
 }});
 
-define({id: "1ae4bf7b", mode: "inline", inputs: ["cambio_cotizacion","display"], body: async (cambio_cotizacion,display) => {
+define({id: "61e0de14", mode: "inline", inputs: ["cambio_cotizacion","display"], body: async (cambio_cotizacion,display) => {
 display(await(
-cambio_cotizacion("El promedio ponderado por volumen", "vwap")
+cambio_cotizacion("vwap")
 ))
 }});
 
@@ -225,9 +249,9 @@ selected.vwap ? "Equivale a Bs. " + selected.vwap + "." : ""
 ))
 }});
 
-define({id: "dbd6d606", mode: "inline", inputs: ["cambio_cotizacion","tradeType","display"], body: async (cambio_cotizacion,tradeType,display) => {
+define({id: "ce7c2cb0", mode: "inline", inputs: ["cambio_cotizacion","display"], body: async (cambio_cotizacion,display) => {
 display(await(
-cambio_cotizacion("el valor más frecuente en el 10% de ofertas más " + (tradeType == "buy" ? "bajas (para compra)" : "altas (para venta)"), "naive")
+cambio_cotizacion("naive")
 ))
 }});
 
@@ -240,29 +264,34 @@ selected.naive ? "y equivale a Bs. " + selected.naive : ""
 </script>
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
-<link rel="stylesheet" href="./_file/style.7525ff82.css">
-<div class="observablehq observablehq--block"><!--:d3eb5b51:--></div>
-<div class="observablehq observablehq--block"><!--:496122d0:--></div>
+<link rel="stylesheet" href="./_file/style.15cb92ab.css">
+<div class="observablehq observablehq--block"><!--:7b417fa6:--></div>
+<div class="observablehq observablehq--block"><!--:b69a6d76:--></div>
 <div class="observablehq observablehq--block"><!--:2e291c05:--></div>
 <div class="observablehq observablehq--block"><!--:49575d12:--></div>
 <div class="observablehq observablehq--block"><!--:76d39a7f:--></div>
 <div class="observablehq observablehq--block"><!--:80ddf0d1:--></div>
 <div class="observablehq observablehq--block"><!--:3bf90eb5:--></div>
-<div class="observablehq observablehq--block"><!--:fba75765:--></div>
-<div class="title">Dólar en Bolivia</div>
-<div class="options">
+<div class="observablehq observablehq--block"><!--:8b4f0959:--></div>
+<div id="titulo">Dólar en Bolivia</div>
+<div id="opcionesCompraVenta">
     <observablehq-loading></observablehq-loading><!--:9cf6dfe6:-->
 </div>
-<div class="plotHeader">
+<div id="precioValor">
     <observablehq-loading></observablehq-loading><!--:845d4acb:-->
 </div>
-<div class="card">
-    <div class="options dias">
+<div id="grafico" class="card">
+    <div id="opcionesTiempo">
         <observablehq-loading></observablehq-loading><!--:6c4ada2c:-->
     </div>
     <observablehq-loading></observablehq-loading><!--:0f3850ab:-->
+    <div id="graficoNota">
+        <div id="cotizacionSeleccionada">
+            <observablehq-loading></observablehq-loading><!--:db14ec10:-->
+        </div>
+    </div>
 </div>
-<div class="explainer">
+<div id="devaluacion">
     <div>
         Bs. <observablehq-loading></observablehq-loading><!--:02aa75dd:-->
         <span> equivalen a </span>
@@ -277,29 +306,29 @@ selected.naive ? "y equivale a Bs. " + selected.naive : ""
         <span class="underlined"><observablehq-loading></observablehq-loading><!--:908537ca:--></span>.
     </div>
 </div>
-<div class="description">
+<div id="explicacion">
     <details open="">
         <summary>¿De dónde salen estos números?</summary>
         <div class="content">
 <p><a href="https://p2p.binance.com/en/trade/all-payments/USDT?fiat=BOB" target="_blank" rel="noopener noreferrer">Binance P2P</a> es un mercado en internet donde la gente puede comprar y vender USDT, una criptomoneda cuya cotización simula el valor del dólar americano. El valor de USDT tiende a subir y bajar junto al valor del dólar en la calle. Cuando alguien quiere vender USDT por bolivianos, ingresa a Binance P2P y publica una oferta, que consiste en una cotización y un monto. Binance P2P lista docenas de ofertas todo el tiempo.</p>
 <p>Sin embargo, este listado no incluye una cotización estimada de mercado o información de qué ofertas se toman efectivamente. Es sólo una lista de ofertas. Entonces ¿de dónde sale que 1 Dólar equivale a <observablehq-loading></observablehq-loading><!--:81b20b57:--> Bolivianos? ¿Cómo consolidar la información de este listado en un sólo valor referencial?</p>
 <p>Ofrezco 3 opciones:</p>
-<p><observablehq-loading></observablehq-loading><!--:f53500d7:-->, que es una idea simple e intuitiva de la tendencia central en el mercado. Es el precio que muestro por defecto y equivale a Bs. <observablehq-loading></observablehq-loading><!--:f6967881:-->.</p>
-<p><observablehq-loading></observablehq-loading><!--:1ae4bf7b:-->, que sería una estimación más correcta de la tendencia central ponderando cada precio listado por el monto que se ofrece. <observablehq-loading></observablehq-loading><!--:7dae6b5d:--></p>
-<p>Estas opciones son aproximaciones de la tendencia central en el mercado. Pero alguien que quiera comprar o vender dólares probablemente busca valores más extremos. La tercera opción es <observablehq-loading></observablehq-loading><!--:dbd6d606:-->. Este valor representa la cotización de una oferta que se tomaría fácilmente en el mercado <observablehq-loading></observablehq-loading><!--:05c0d78b:-->.</p>
+<p>La <observablehq-loading></observablehq-loading><!--:daaa1762:-->, que es una idea simple e intuitiva de la tendencia central en el mercado. Es el precio que muestro por defecto y equivale a Bs. <observablehq-loading></observablehq-loading><!--:f6967881:-->.</p>
+<p>El <observablehq-loading></observablehq-loading><!--:61e0de14:-->, que sería una estimación más correcta de la tendencia central ponderando cada precio listado por el monto que se ofrece. <observablehq-loading></observablehq-loading><!--:7dae6b5d:--></p>
+<p>Estas opciones son aproximaciones de la tendencia central en el mercado. Pero alguien que quiera comprar o vender dólares probablemente busca valores más extremos. La tercera opción es el <observablehq-loading></observablehq-loading><!--:ce7c2cb0:-->. Este valor representa la cotización de una oferta que se tomaría fácilmente en el mercado <observablehq-loading></observablehq-loading><!--:05c0d78b:-->.</p>
 <p>Comencé a estimar cada opción desde un momento distinto. Primero la mediana, luego el promedio ponderado y finalmente el valor extremo. Junto a estas estimaciones recojo el precio mínimo y máximo que se ofrece en el mercado. Puedes utilizar todos estos datos como quieras desde <a href="https://github.com/mauforonda/dolares/" target="_blank" rel="noopener noreferrer">el repositorio</a>, que se actualiza cada 30 minutos, más o menos.</p>
 <p>Usualmente todo sale bien, pero a veces también meto la pata. ¿Notas un salto extraño en los precios de compra entre el 16 y 17 de agosto? Ahí introduje un error en el código que contaminó datos por 12 horas, los cuales luego borré. Por favor sólo utiliza estos números como una referencia.</p>
 </div>
 </details></div><div class="center">🪴</div>
-<div class="sources">
-    <div class="source">
+<div id="creditos">
+    <div class="credito">
         <span><a href="https://p2p.binance.com/en/trade/all-payments/USDT?fiat=BOB" target="_blank" rel="noopener noreferrer">Binance P2P</a></span>
-        <span class="annotation">fuente</span>
+        <span class="creditoNota">fuente</span>
     </div>
     <div>&amp;</div>
-    <div class="source">
+    <div class="credito">
         <span><a href="mailto:mauriforonda@gmail.com" target="_blank" rel="noopener noreferrer">Mauricio Foronda</a></span>
-        <span class="annotation">creación</span>
+        <span class="creditoNota">creación</span>
     </div>
 </div>
 </main>
