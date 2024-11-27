@@ -43,7 +43,7 @@ const data = d3.csv(`${github}/${tradeType}.csv`, d3.autoType);
 const opcionesDias = {
     "1e6": "todo",
     // 180: "6 meses",
-    // 90: "3 meses",
+    90: "3 meses",
     30: "1 mes",
     7: "1 semana",
 };
