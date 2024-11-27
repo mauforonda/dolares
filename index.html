@@ -100,11 +100,11 @@ const data = d3.csv(`${github}/${tradeType}.csv`, d3.autoType);
 return {github,data};
 }});
 
-define({id: "49575d12", inputs: ["Inputs","Generators"], outputs: ["opcionesDias","timeRanges","timeRange"], body: (Inputs,Generators) => {
+define({id: "b0ad1f99", inputs: ["Inputs","Generators"], outputs: ["opcionesDias","timeRanges","timeRange"], body: (Inputs,Generators) => {
 const opcionesDias = {
     "1e6": "todo",
     // 180: "6 meses",
-    // 90: "3 meses",
+    90: "3 meses",
     30: "1 mes",
     7: "1 semana",
 };
@@ -268,7 +268,7 @@ selected.naive ? "y equivale a Bs. " + selected.naive : ""
 <div class="observablehq observablehq--block"><!--:7b417fa6:--></div>
 <div class="observablehq observablehq--block"><!--:b69a6d76:--></div>
 <div class="observablehq observablehq--block"><!--:2e291c05:--></div>
-<div class="observablehq observablehq--block"><!--:49575d12:--></div>
+<div class="observablehq observablehq--block"><!--:b0ad1f99:--></div>
 <div class="observablehq observablehq--block"><!--:76d39a7f:--></div>
 <div class="observablehq observablehq--block"><!--:80ddf0d1:--></div>
 <div class="observablehq observablehq--block"><!--:3bf90eb5:--></div>
