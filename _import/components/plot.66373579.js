@@ -1,4 +1,4 @@
-import * as Plot from "../../_npm/@observablehq/plot@0.6.16/_esm.js";
+import * as Plot from "../../_npm/@observablehq/plot@0.6.17/_esm.js";
 
 import { html, svg } from "../../_npm/htl@0.3.1/_esm.js";
 
