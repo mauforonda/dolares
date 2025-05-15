@@ -46,6 +46,7 @@ const opcionesDias = {
     90: "3 meses",
     30: "1 mes",
     7: "1 semana",
+    3: "3 días"
 };
 const timeRanges = Inputs.radio(Object.keys(opcionesDias), {
     format: (d) => opcionesDias[d],
