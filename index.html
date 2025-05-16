@@ -257,9 +257,9 @@ cambio_cotizacion("vwap")
 ))
 }});
 
-define({id: "7dae6b5d", mode: "inline", inputs: ["selected","display"], body: async (selected,display) => {
+define({id: "adb395cc", mode: "inline", inputs: ["selected","display"], body: async (selected,display) => {
 display(await(
-selected.vwap ? "Equivale a Bs. " + selected.vwap + "." : ""
+selected.vwap ? "y equivale a Bs. " + selected.vwap : ""
 ))
 }});
 
@@ -329,8 +329,8 @@ selected.naive ? "y equivale a Bs. " + selected.naive : ""
 <p><a href="https://p2p.binance.com/en/trade/all-payments/USDT?fiat=BOB" target="_blank" rel="noopener noreferrer">Binance P2P</a> es un mercado en internet donde la gente puede comprar y vender USDT, una criptomoneda cuya cotización simula el valor del dólar americano. El valor de USDT tiende a subir y bajar junto al valor del dólar en la calle. Cuando alguien quiere vender USDT por bolivianos, ingresa a Binance P2P y publica una oferta, que consiste en una cotización y un monto. Binance P2P lista docenas de ofertas todo el tiempo.</p>
 <p>Sin embargo, este listado no incluye una cotización estimada de mercado o información de qué ofertas se toman efectivamente. Es sólo una lista de ofertas. Entonces ¿de dónde sale que 1 Dólar equivale a <observablehq-loading></observablehq-loading><!--:81b20b57:--> Bolivianos? ¿Cómo consolidar la información de este listado en un sólo valor referencial?</p>
 <p>Ofrezco 3 opciones:</p>
-<p>La <observablehq-loading></observablehq-loading><!--:daaa1762:-->, que es una idea simple e intuitiva de la tendencia central en el mercado. Es el precio que muestro por defecto y equivale a Bs. <observablehq-loading></observablehq-loading><!--:f6967881:-->.</p>
-<p>El <observablehq-loading></observablehq-loading><!--:61e0de14:-->, que sería una estimación más correcta de la tendencia central ponderando cada precio listado por el monto que se ofrece. <observablehq-loading></observablehq-loading><!--:7dae6b5d:--></p>
+<p>La <observablehq-loading></observablehq-loading><!--:daaa1762:-->, que es una idea simple e intuitiva de la tendencia central en el mercado y equivale a Bs. <observablehq-loading></observablehq-loading><!--:f6967881:-->.</p>
+<p>El <observablehq-loading></observablehq-loading><!--:61e0de14:-->, que sería una estimación más correcta de la tendencia central ponderando cada precio listado por el monto que se ofrece. Es el precio que muestro por defecto <observablehq-loading></observablehq-loading><!--:adb395cc:-->.</p>
 <p>Estas opciones son aproximaciones de la tendencia central en el mercado. Pero alguien que quiera comprar o vender dólares probablemente busca valores más extremos. La tercera opción es el <observablehq-loading></observablehq-loading><!--:ce7c2cb0:-->. Este valor representa la cotización de una oferta que se tomaría fácilmente en el mercado <observablehq-loading></observablehq-loading><!--:05c0d78b:-->.</p>
 <p>Puedes utilizar todos estos datos como quieras desde <a href="https://github.com/mauforonda/dolares/" target="_blank" rel="noopener noreferrer">el repositorio</a>, que se actualiza cada 30 minutos, más o menos.</p>
 <p>Por favor sólo utiliza estos números como una referencia.</p>
