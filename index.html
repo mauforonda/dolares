@@ -58,10 +58,10 @@
 
 import {define} from "./_observablehq/client.js";
 
-define({id: "7b417fa6", inputs: ["localStorage","Inputs","Generators"], outputs: ["drawPlot","displayObservation","default_cotizacion","stored_cotizacion","selected_cotizacion","input_cotizacion","tipo_cotizacion"], body: async (localStorage,Inputs,Generators) => {
+define({id: "c7410a86", inputs: ["localStorage","Inputs","Generators"], outputs: ["drawPlot","displayObservation","default_cotizacion","stored_cotizacion","selected_cotizacion","input_cotizacion","tipo_cotizacion"], body: async (localStorage,Inputs,Generators) => {
 const {drawPlot, displayObservation} = await import("./_import/components/plot.66373579.js");
 
-const default_cotizacion = "median";
+const default_cotizacion = "vwap";
 const stored_cotizacion = localStorage.getItem("tipo-cotizacion");
 const selected_cotizacion = stored_cotizacion
     ? stored_cotizacion
@@ -279,7 +279,7 @@ selected.naive ? "y equivale a Bs. " + selected.naive : ""
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
 <link rel="stylesheet" href="./_file/style.15cb92ab.css">
-<div class="observablehq observablehq--block"><!--:7b417fa6:--></div>
+<div class="observablehq observablehq--block"><!--:c7410a86:--></div>
 <div class="observablehq observablehq--block"><!--:47d5d96a:--></div>
 <div class="observablehq observablehq--block"><!--:b69a6d76:--></div>
 <div class="observablehq observablehq--block"><!--:2e291c05:--></div>
@@ -323,7 +323,7 @@ selected.naive ? "y equivale a Bs. " + selected.naive : ""
     </div>
 </div>
 <div id="explicacion">
-    <details open="">
+    <details>
         <summary>¿De dónde salen estos números?</summary>
         <div class="content">
 <p><a href="https://p2p.binance.com/en/trade/all-payments/USDT?fiat=BOB" target="_blank" rel="noopener noreferrer">Binance P2P</a> es un mercado en internet donde la gente puede comprar y vender USDT, una criptomoneda cuya cotización simula el valor del dólar americano. El valor de USDT tiende a subir y bajar junto al valor del dólar en la calle. Cuando alguien quiere vender USDT por bolivianos, ingresa a Binance P2P y publica una oferta, que consiste en una cotización y un monto. Binance P2P lista docenas de ofertas todo el tiempo.</p>
@@ -332,8 +332,8 @@ selected.naive ? "y equivale a Bs. " + selected.naive : ""
 <p>La <observablehq-loading></observablehq-loading><!--:daaa1762:-->, que es una idea simple e intuitiva de la tendencia central en el mercado. Es el precio que muestro por defecto y equivale a Bs. <observablehq-loading></observablehq-loading><!--:f6967881:-->.</p>
 <p>El <observablehq-loading></observablehq-loading><!--:61e0de14:-->, que sería una estimación más correcta de la tendencia central ponderando cada precio listado por el monto que se ofrece. <observablehq-loading></observablehq-loading><!--:7dae6b5d:--></p>
 <p>Estas opciones son aproximaciones de la tendencia central en el mercado. Pero alguien que quiera comprar o vender dólares probablemente busca valores más extremos. La tercera opción es el <observablehq-loading></observablehq-loading><!--:ce7c2cb0:-->. Este valor representa la cotización de una oferta que se tomaría fácilmente en el mercado <observablehq-loading></observablehq-loading><!--:05c0d78b:-->.</p>
-<p>Comencé a estimar cada opción desde un momento distinto. Primero la mediana, luego el promedio ponderado y finalmente el valor extremo. Junto a estas estimaciones recojo el precio mínimo y máximo que se ofrece en el mercado. Puedes utilizar todos estos datos como quieras desde <a href="https://github.com/mauforonda/dolares/" target="_blank" rel="noopener noreferrer">el repositorio</a>, que se actualiza cada 30 minutos, más o menos.</p>
-<p>Usualmente todo sale bien, pero a veces también meto la pata. ¿Notas un salto extraño en los precios de compra entre el 16 y 17 de agosto? Ahí introduje un error en el código que contaminó datos por 12 horas, los cuales luego borré. Por favor sólo utiliza estos números como una referencia.</p>
+<p>Puedes utilizar todos estos datos como quieras desde <a href="https://github.com/mauforonda/dolares/" target="_blank" rel="noopener noreferrer">el repositorio</a>, que se actualiza cada 30 minutos, más o menos.</p>
+<p>Por favor sólo utiliza estos números como una referencia.</p>
 </div>
 </details></div><div class="center">🪴</div>
 <div id="creditos">
