@@ -3,7 +3,7 @@
 ```js
 import { drawPlot, displayObservation } from "./components/plot.js";
 
-const default_cotizacion = "median";
+const default_cotizacion = "vwap";
 const stored_cotizacion = localStorage.getItem("tipo-cotizacion");
 const selected_cotizacion = stored_cotizacion
     ? stored_cotizacion
@@ -151,7 +151,7 @@ function cambio_cotizacion(cotizacion) {
 </div>
 
 <div id="explicacion">
-    <details open>
+    <details>
         <summary>¿De dónde salen estos números?</summary>
         <div class="content">
 
@@ -167,9 +167,9 @@ El ${cambio_cotizacion("vwap")}, que sería una estimación más correcta de la 
 
 Estas opciones son aproximaciones de la tendencia central en el mercado. Pero alguien que quiera comprar o vender dólares probablemente busca valores más extremos. La tercera opción es el ${cambio_cotizacion("naive")}. Este valor representa la cotización de una oferta que se tomaría fácilmente en el mercado ${selected.naive ? "y equivale a Bs. " + selected.naive : ""}.
 
-Comencé a estimar cada opción desde un momento distinto. Primero la mediana, luego el promedio ponderado y finalmente el valor extremo. Junto a estas estimaciones recojo el precio mínimo y máximo que se ofrece en el mercado. Puedes utilizar todos estos datos como quieras desde [el repositorio](https://github.com/mauforonda/dolares/), que se actualiza cada 30 minutos, más o menos.
+Puedes utilizar todos estos datos como quieras desde [el repositorio](https://github.com/mauforonda/dolares/), que se actualiza cada 30 minutos, más o menos.
 
-Usualmente todo sale bien, pero a veces también meto la pata. ¿Notas un salto extraño en los precios de compra entre el 16 y 17 de agosto? Ahí introduje un error en el código que contaminó datos por 12 horas, los cuales luego borré. Por favor sólo utiliza estos números como una referencia.
+Por favor sólo utiliza estos números como una referencia.
 
 </div>
 </details></div><div class="center">🪴</div>
