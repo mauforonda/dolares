@@ -14,6 +14,14 @@ const tipo_cotizacion = Generators.input(input_cotizacion);
 ```
 
 ```js
+const default_time = "30";
+const stored_time = localStorage.getItem("timerange");
+const selected_time = stored_time
+    ? stored_time
+    : default_time;
+```
+
+```js
 const tradeTypes = Inputs.radio(["buy", "sell"], {
     format: (d) => (d == "buy" ? "compra" : "venta"),
     value: "buy",
@@ -53,9 +61,13 @@ const timeRanges = Inputs.radio(Object.keys(opcionesDias), {
     sort: (a, b) => {
         return Number(b) - Number(a);
     },
-    value: "30",
+    value: selected_time,
 });
 const timeRange = Generators.input(timeRanges);
+```
+
+```js
+localStorage.setItem("timerange", timeRange);
 ```
 
 ```js
