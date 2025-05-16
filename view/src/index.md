@@ -161,9 +161,9 @@ Sin embargo, este listado no incluye una cotización estimada de mercado o infor
 
 Ofrezco 3 opciones:
 
-La ${cambio_cotizacion("median")}, que es una idea simple e intuitiva de la tendencia central en el mercado. Es el precio que muestro por defecto y equivale a Bs. ${selected.median}.
+La ${cambio_cotizacion("median")}, que es una idea simple e intuitiva de la tendencia central en el mercado y equivale a Bs. ${selected.median}.
 
-El ${cambio_cotizacion("vwap")}, que sería una estimación más correcta de la tendencia central ponderando cada precio listado por el monto que se ofrece. ${selected.vwap ? "Equivale a Bs. " + selected.vwap + "." : ""}
+El ${cambio_cotizacion("vwap")}, que sería una estimación más correcta de la tendencia central ponderando cada precio listado por el monto que se ofrece. Es el precio que muestro por defecto ${selected.vwap ? "y equivale a Bs. " + selected.vwap : ""}.
 
 Estas opciones son aproximaciones de la tendencia central en el mercado. Pero alguien que quiera comprar o vender dólares probablemente busca valores más extremos. La tercera opción es el ${cambio_cotizacion("naive")}. Este valor representa la cotización de una oferta que se tomaría fácilmente en el mercado ${selected.naive ? "y equivale a Bs. " + selected.naive : ""}.
 
