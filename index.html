@@ -72,6 +72,15 @@ const tipo_cotizacion = Generators.input(input_cotizacion);
 return {drawPlot,displayObservation,default_cotizacion,stored_cotizacion,selected_cotizacion,input_cotizacion,tipo_cotizacion};
 }});
 
+define({id: "47d5d96a", inputs: ["localStorage"], outputs: ["default_time","stored_time","selected_time"], body: (localStorage) => {
+const default_time = "30";
+const stored_time = localStorage.getItem("timerange");
+const selected_time = stored_time
+    ? stored_time
+    : default_time;
+return {default_time,stored_time,selected_time};
+}});
+
 define({id: "b69a6d76", inputs: ["Inputs","Generators"], outputs: ["tradeTypes","tradeType","officialRates","texto_cotizaciones"], body: (Inputs,Generators) => {
 const tradeTypes = Inputs.radio(["buy", "sell"], {
     format: (d) => (d == "buy" ? "compra" : "venta"),
@@ -100,7 +109,7 @@ const data = d3.csv(`${github}/${tradeType}.csv`, d3.autoType);
 return {github,data};
 }});
 
-define({id: "04500e66", inputs: ["Inputs","Generators"], outputs: ["opcionesDias","timeRanges","timeRange"], body: (Inputs,Generators) => {
+define({id: "3b14dd58", inputs: ["Inputs","selected_time","Generators"], outputs: ["opcionesDias","timeRanges","timeRange"], body: (Inputs,selected_time,Generators) => {
 const opcionesDias = {
     "1e6": "todo",
     // 180: "6 meses",
@@ -114,10 +123,14 @@ const timeRanges = Inputs.radio(Object.keys(opcionesDias), {
     sort: (a, b) => {
         return Number(b) - Number(a);
     },
-    value: "30",
+    value: selected_time,
 });
 const timeRange = Generators.input(timeRanges);
 return {opcionesDias,timeRanges,timeRange};
+}});
+
+define({id: "b0ab47b8", inputs: ["localStorage","timeRange"], body: (localStorage,timeRange) => {
+localStorage.setItem("timerange", timeRange);
 }});
 
 define({id: "76d39a7f", inputs: ["drawPlot","data","width","tipo_cotizacion","timeRange","Generators"], outputs: ["plot","observation"], body: (drawPlot,data,width,tipo_cotizacion,timeRange,Generators) => {
@@ -267,9 +280,11 @@ selected.naive ? "y equivale a Bs. " + selected.naive : ""
 <main id="observablehq-main" class="observablehq">
 <link rel="stylesheet" href="./_file/style.15cb92ab.css">
 <div class="observablehq observablehq--block"><!--:7b417fa6:--></div>
+<div class="observablehq observablehq--block"><!--:47d5d96a:--></div>
 <div class="observablehq observablehq--block"><!--:b69a6d76:--></div>
 <div class="observablehq observablehq--block"><!--:2e291c05:--></div>
-<div class="observablehq observablehq--block"><!--:04500e66:--></div>
+<div class="observablehq observablehq--block"><!--:3b14dd58:--></div>
+<div class="observablehq observablehq--block"><!--:b0ab47b8:--></div>
 <div class="observablehq observablehq--block"><!--:76d39a7f:--></div>
 <div class="observablehq observablehq--block"><!--:80ddf0d1:--></div>
 <div class="observablehq observablehq--block"><!--:3bf90eb5:--></div>
