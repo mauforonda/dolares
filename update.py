@@ -35,6 +35,8 @@ def checkPrices(fiat, asset, tradeType, rows=20, max_retries=3, timeout=10):
                 "profession",
                 "fiat_trade",
             ],
+            "tradedWith": False,
+            "followed": False,
         }
 
     def makeRequest(url, data, retry_count=0):
@@ -52,7 +54,7 @@ def checkPrices(fiat, asset, tradeType, rows=20, max_retries=3, timeout=10):
                 wait_time = 2**retry_count
                 print(f"Request failed. Retrying in {wait_time} seconds...")
                 time.sleep(wait_time)
-                return make_request(url, data, retry_count + 1)
+                return makeRequest(url, data, retry_count + 1)
             else:
                 raise Exception(f"Max retries reached. Last error: {str(e)}")
 
@@ -103,7 +105,8 @@ def checkPrices(fiat, asset, tradeType, rows=20, max_retries=3, timeout=10):
         )
 
         ads.extend(response_data["data"])
-        if len(ads) == response_data["total"]:
+        print(f"{tradeType}: page {page} : {len(ads)} / {response_data['total']} ads")
+        if len(ads) >= response_data["total"]:
             break
         else:
             page += 1
@@ -116,7 +119,6 @@ def checkPrices(fiat, asset, tradeType, rows=20, max_retries=3, timeout=10):
         outliers = identifyOutliers(ads, prices)
     else:
         outliers = []
-
 
     return (
         dict(
@@ -132,7 +134,7 @@ def checkPrices(fiat, asset, tradeType, rows=20, max_retries=3, timeout=10):
         dict(
             offers=len(prices),
             tradable=sum(tradable),
-            herfindahl_hirschman=sum([(i/total) ** 2 for i in tradable]) * 100
+            herfindahl_hirschman=sum([(i / total) ** 2 for i in tradable]) * 100,
         ),
         outliers,
     )
