@@ -1,4 +1,4 @@
-name: Actualizar
+name: actualizar_oficial
 
 on:
   schedule:

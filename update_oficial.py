@@ -85,7 +85,7 @@ def get_compra(session):
     cotizaciones = get_cotizaciones(html)
     promedio = get_promedio(html)
 
-    return {"fecha": fecha, **cotizaciones, "promedio": promedio}
+    return {"timestamp": fecha, **cotizaciones, "value": promedio}
 
 
 def get_venta(session):
@@ -95,7 +95,7 @@ def get_venta(session):
             "%Y-%m-%d"
         )
         cotizacion = normalize(i.group(4), True)
-        return {"fecha": fecha, "cotizacion": cotizacion}
+        return {"timestamp": fecha, "value": cotizacion}
 
     URL = "https://www.bcb.gob.bo/?q=content/valor-referencial-del-d%C3%B3lar-estadounidense-para-operaciones-con-el-exterior"
     r = session.get(URL)
@@ -109,8 +109,8 @@ def consolidar(df, filename):
     if fn.exists():
         df_old = pd.read_csv(fn)
         df = pd.concat([df_old, df])
-        df = df.drop_duplicates(subset=["fecha"], keep="last")
-    df.sort_values("fecha").to_csv(fn, index=False)
+        df = df.drop_duplicates(subset=["timestamp"], keep="last")
+    df.sort_values("timestamp").to_csv(fn, index=False)
 
 
 session = requests.Session()

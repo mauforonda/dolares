@@ -1,4 +1,4 @@
-fecha,cotizacion
+timestamp,value
 2025-11-01,12.64
 2025-11-02,12.64
 2025-11-03,12.55
