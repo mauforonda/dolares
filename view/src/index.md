@@ -6,8 +6,8 @@ import { drawPlot, displayObservation } from "./components/plot.js";
 const default_cotizacion = "vwap";
 const stored_cotizacion = localStorage.getItem("tipo-cotizacion");
 const selected_cotizacion = stored_cotizacion
-    ? stored_cotizacion
-    : default_cotizacion;
+  ? stored_cotizacion
+  : default_cotizacion;
 
 const input_cotizacion = Inputs.input(selected_cotizacion);
 const tipo_cotizacion = Generators.input(input_cotizacion);
@@ -16,52 +16,72 @@ const tipo_cotizacion = Generators.input(input_cotizacion);
 ```js
 const default_time = "30";
 const stored_time = localStorage.getItem("timerange");
-const selected_time = stored_time
-    ? stored_time
-    : default_time;
+const selected_time = stored_time ? stored_time : default_time;
 ```
 
 ```js
 const tradeTypes = Inputs.radio(["buy", "sell"], {
-    format: (d) => (d == "buy" ? "compra" : "venta"),
-    value: "buy",
+  format: (d) => (d == "buy" ? "compra" : "venta"),
+  value: "buy",
 });
 const tradeType = Generators.input(tradeTypes);
 const officialRates = {
-    buy: 6.86,
-    sell: 6.96,
+  buy: 6.86,
+  sell: 6.96,
 };
 
 const texto_cotizaciones = (cotizacion) => {
-    const opciones = {
-        median: "mediana de todos los precios listados",
-        vwap: "promedio ponderado por volumen",
-        naive: `valor más frecuente en el 10% de ofertas más bajo (compra) o alto (venta)`,
-    };
-    return opciones[cotizacion];
+  const opciones = {
+    median: "mediana de todos los precios listados",
+    vwap: "promedio ponderado por volumen",
+    naive: `valor más frecuente en el 10% de ofertas más bajo (compra) o alto (venta)`,
+  };
+  return opciones[cotizacion];
 };
 ```
 
 ```js
 const github = "https://raw.githubusercontent.com/mauforonda/dolares/main";
-const data = d3.csv(`${github}/${tradeType}.csv`, d3.autoType);
+
+const oficial = await d3.csv(`${github}/${tradeType}_oficial.csv`, (d) => ({
+  timestamp: new Date(d.timestamp + "T00:00-04:00"),
+  value: +d.value,
+}));
+
+const oficialMap = new Map(
+  oficial.map((o) => [o.timestamp.toISOString().slice(0, 10), o.value])
+);
+
+let data = await d3.csv(`${github}/${tradeType}.csv`, d3.autoType);
+
+data = data.map((d) => ({
+  ...d,
+  date: d.timestamp.toISOString().slice(0, 10),
+}));
 ```
 
 ```js
+const total_days = new Set(
+  data.map((d) => {
+    const t = new Date(d.timestamp.getTime() - 4 * 3600e3);
+    return t.toISOString().slice(0, 10);
+  })
+).size;
 const opcionesDias = {
-    "1e6": "todo",
-    // 180: "6 meses",
-    90: "3 meses",
-    30: "1 mes",
-    7: "1 semana",
-    3: "3 días"
+  total_days: "todo",
+  90: "3 meses",
+  30: "1 mes",
+  7: "1 semana",
+  3: "3 días",
 };
 const timeRanges = Inputs.radio(Object.keys(opcionesDias), {
-    format: (d) => opcionesDias[d],
-    sort: (a, b) => {
-        return Number(b) - Number(a);
-    },
-    value: selected_time,
+  format: (d) => opcionesDias[d],
+  sort: (a, b) => {
+    if (a === "total_days") return -1;
+    if (b === "total_days") return 1;
+    return Number(b) - Number(a);
+  },
+  value: selected_time,
 });
 const timeRange = Generators.input(timeRanges);
 ```
@@ -71,44 +91,52 @@ localStorage.setItem("timerange", timeRange);
 ```
 
 ```js
-const plot = drawPlot(data, width, tipo_cotizacion, timeRange);
+const dark = Generators.dark();
+```
+
+```js
+const plot = drawPlot(data, oficial, width, tipo_cotizacion, timeRange, dark);
 const observation = Generators.input(plot);
 ```
 
 ```js
 const selected = observation ? observation : data.slice(-1)[0];
-const plotHeader = displayObservation(selected, tipo_cotizacion);
+const plotHeader = displayObservation(
+  selected,
+  tipo_cotizacion,
+  oficialMap.get(selected.date)
+);
 ```
 
 ```js
 const bolivianosInitiate = Inputs.input(100);
 const bolivianosInput = Inputs.bind(
-    htl.html`<input type=number style="width: 80px;">`,
-    bolivianosInitiate
+  htl.html`<input type=number style="width: 80px;">`,
+  bolivianosInitiate
 );
 const bolivianos = Generators.input(bolivianosInput);
 ```
 
 ```js
 function set(input, value) {
-    input.value = value;
-    input.dispatchEvent(new Event("input", { bubbles: true }));
+  input.value = value;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 function cambio_cotizacion(cotizacion) {
-    const texto = texto_cotizaciones(cotizacion);
-    const input_button = htl.html`<span class="cotizacion">${texto}</span>`;
-    if (cotizacion == selected_cotizacion) {
-        input_button.classList.add("selected");
-    }
-    input_button.onclick = () => {
-        set(input_cotizacion, cotizacion);
-        localStorage.setItem("tipo-cotizacion", cotizacion);
-        document.querySelector(".selected").classList.remove("selected");
-        input_button.classList.add("selected");
-        document.querySelector("#cotizacionSeleccionada").textContent = texto;
-    };
-    return input_button;
+  const texto = texto_cotizaciones(cotizacion);
+  const input_button = htl.html`<span class="cotizacion">${texto}</span>`;
+  if (cotizacion == selected_cotizacion) {
+    input_button.classList.add("selected");
+  }
+  input_button.onclick = () => {
+    set(input_cotizacion, cotizacion);
+    localStorage.setItem("tipo-cotizacion", cotizacion);
+    document.querySelector(".selected").classList.remove("selected");
+    input_button.classList.add("selected");
+    document.querySelector("#cotizacionSeleccionada").textContent = texto;
+  };
+  return input_button;
 }
 ```
 
@@ -167,6 +195,8 @@ El ${cambio_cotizacion("vwap")}, que sería una estimación más correcta de la 
 
 Estas opciones son aproximaciones de la tendencia central en el mercado. Pero alguien que quiera comprar o vender dólares probablemente busca valores más extremos. La tercera opción es el ${cambio_cotizacion("naive")}. Este valor representa la cotización de una oferta que se tomaría fácilmente en el mercado ${selected.naive ? "y equivale a Bs. " + selected.naive : ""}.
 
+Finalmente, el 1 de diciembre de 2025 el Banco Central de Bolivia [comenzó a publicar](https://www.bcb.gob.bo/webdocs/files_noticias/COMUNICADO%20DE%20PRENSA%20BCB_DIC_ok.pdf) el _valor referencial del dólar estadounidense_ para compra y venta. El valor de compra representa el promedio ponderado del tipo de cambio en operaciones entre entidades de intermediación financiera y sus clientes mayoristas. Y el valor de venta es el tipo de cambio máximo que estas entidades cobran en operaciones con el exterior. Estos valores se deberían publicar diariamente en la página del Banco Central.
+
 Puedes utilizar todos estos datos como quieras desde [el repositorio](https://github.com/mauforonda/dolares/), que se actualiza cada 30 minutos, más o menos.
 
 Por favor sólo utiliza estos números como una referencia.
@@ -176,12 +206,12 @@ Por favor sólo utiliza estos números como una referencia.
 
 <div id="creditos">
     <div class="credito">
-        <span><a href="https://p2p.binance.com/en/trade/all-payments/USDT?fiat=BOB" target="_blank">Binance P2P</a></span>
-        <span class="creditoNota">fuente</span>
+        <span><a href="https://p2p.binance.com/en/trade/all-payments/USDT?fiat=BOB" target="_blank">Binance P2P</a> + <a href="https://www.bcb.gob.bo/" target="_blank">BCB</a></span>
+        <span class="creditoNota">fuentes</span>
     </div>
     <div>&</div>
     <div class="credito">
-        <span><a href="mailto:mauriforonda@gmail.com">Mauricio Foronda</a></span>
+        <span><a href="https://mauforonda.github.io">Mauricio Foronda</a></span>
         <span class="creditoNota">creación</span>
     </div>
 </div>
