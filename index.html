@@ -12,7 +12,7 @@
 <link rel="modulepreload" href="./_observablehq/client.js">
 <link rel="modulepreload" href="./_observablehq/runtime.js">
 <link rel="modulepreload" href="./_observablehq/stdlib.js">
-<link rel="modulepreload" href="./_import/components/plot.66373579.js">
+<link rel="modulepreload" href="./_import/components/plot.586de1e0.js">
 <link rel="modulepreload" href="./_npm/@observablehq/plot@0.6.17/_esm.js">
 <link rel="modulepreload" href="./_npm/htl@0.3.1/_esm.js">
 <link rel="modulepreload" href="./_npm/d3@7.9.0/_esm.js">
@@ -58,123 +58,152 @@
 
 import {define} from "./_observablehq/client.js";
 
-define({id: "c7410a86", inputs: ["localStorage","Inputs","Generators"], outputs: ["drawPlot","displayObservation","default_cotizacion","stored_cotizacion","selected_cotizacion","input_cotizacion","tipo_cotizacion"], body: async (localStorage,Inputs,Generators) => {
-const {drawPlot, displayObservation} = await import("./_import/components/plot.66373579.js");
+define({id: "0e160895", inputs: ["localStorage","Inputs","Generators"], outputs: ["drawPlot","displayObservation","default_cotizacion","stored_cotizacion","selected_cotizacion","input_cotizacion","tipo_cotizacion"], body: async (localStorage,Inputs,Generators) => {
+const {drawPlot, displayObservation} = await import("./_import/components/plot.586de1e0.js");
 
 const default_cotizacion = "vwap";
 const stored_cotizacion = localStorage.getItem("tipo-cotizacion");
 const selected_cotizacion = stored_cotizacion
-    ? stored_cotizacion
-    : default_cotizacion;
+  ? stored_cotizacion
+  : default_cotizacion;
 
 const input_cotizacion = Inputs.input(selected_cotizacion);
 const tipo_cotizacion = Generators.input(input_cotizacion);
 return {drawPlot,displayObservation,default_cotizacion,stored_cotizacion,selected_cotizacion,input_cotizacion,tipo_cotizacion};
 }});
 
-define({id: "47d5d96a", inputs: ["localStorage"], outputs: ["default_time","stored_time","selected_time"], body: (localStorage) => {
+define({id: "d80fe801", inputs: ["localStorage"], outputs: ["default_time","stored_time","selected_time"], body: (localStorage) => {
 const default_time = "30";
 const stored_time = localStorage.getItem("timerange");
-const selected_time = stored_time
-    ? stored_time
-    : default_time;
+const selected_time = stored_time ? stored_time : default_time;
 return {default_time,stored_time,selected_time};
 }});
 
-define({id: "b69a6d76", inputs: ["Inputs","Generators"], outputs: ["tradeTypes","tradeType","officialRates","texto_cotizaciones"], body: (Inputs,Generators) => {
+define({id: "ef4e770f", inputs: ["Inputs","Generators"], outputs: ["tradeTypes","tradeType","officialRates","texto_cotizaciones"], body: (Inputs,Generators) => {
 const tradeTypes = Inputs.radio(["buy", "sell"], {
-    format: (d) => (d == "buy" ? "compra" : "venta"),
-    value: "buy",
+  format: (d) => (d == "buy" ? "compra" : "venta"),
+  value: "buy",
 });
 const tradeType = Generators.input(tradeTypes);
 const officialRates = {
-    buy: 6.86,
-    sell: 6.96,
+  buy: 6.86,
+  sell: 6.96,
 };
 
 const texto_cotizaciones = (cotizacion) => {
-    const opciones = {
-        median: "mediana de todos los precios listados",
-        vwap: "promedio ponderado por volumen",
-        naive: `valor más frecuente en el 10% de ofertas más bajo (compra) o alto (venta)`,
-    };
-    return opciones[cotizacion];
+  const opciones = {
+    median: "mediana de todos los precios listados",
+    vwap: "promedio ponderado por volumen",
+    naive: `valor más frecuente en el 10% de ofertas más bajo (compra) o alto (venta)`,
+  };
+  return opciones[cotizacion];
 };
 return {tradeTypes,tradeType,officialRates,texto_cotizaciones};
 }});
 
-define({id: "2e291c05", inputs: ["d3","tradeType"], outputs: ["github","data"], body: (d3,tradeType) => {
+define({id: "4f0781b7", inputs: ["d3","tradeType"], outputs: ["github","oficial","oficialMap","data"], body: async (d3,tradeType) => {
 const github = "https://raw.githubusercontent.com/mauforonda/dolares/main";
-const data = d3.csv(`${github}/${tradeType}.csv`, d3.autoType);
-return {github,data};
+
+const oficial = await d3.csv(`${github}/${tradeType}_oficial.csv`, (d) => ({
+  timestamp: new Date(d.timestamp + "T00:00-04:00"),
+  value: +d.value,
+}));
+
+const oficialMap = new Map(
+  oficial.map((o) => [o.timestamp.toISOString().slice(0, 10), o.value])
+);
+
+let data = await d3.csv(`${github}/${tradeType}.csv`, d3.autoType);
+
+data = data.map((d) => ({
+  ...d,
+  date: d.timestamp.toISOString().slice(0, 10),
+}));
+return {github,oficial,oficialMap,data};
 }});
 
-define({id: "3b14dd58", inputs: ["Inputs","selected_time","Generators"], outputs: ["opcionesDias","timeRanges","timeRange"], body: (Inputs,selected_time,Generators) => {
+define({id: "46d431c0", inputs: ["data","Inputs","selected_time","Generators"], outputs: ["total_days","opcionesDias","timeRanges","timeRange"], body: (data,Inputs,selected_time,Generators) => {
+const total_days = new Set(
+  data.map((d) => {
+    const t = new Date(d.timestamp.getTime() - 4 * 3600e3);
+    return t.toISOString().slice(0, 10);
+  })
+).size;
 const opcionesDias = {
-    "1e6": "todo",
-    // 180: "6 meses",
-    90: "3 meses",
-    30: "1 mes",
-    7: "1 semana",
-    3: "3 días"
+  total_days: "todo",
+  90: "3 meses",
+  30: "1 mes",
+  7: "1 semana",
+  3: "3 días",
 };
 const timeRanges = Inputs.radio(Object.keys(opcionesDias), {
-    format: (d) => opcionesDias[d],
-    sort: (a, b) => {
-        return Number(b) - Number(a);
-    },
-    value: selected_time,
+  format: (d) => opcionesDias[d],
+  sort: (a, b) => {
+    if (a === "total_days") return -1;
+    if (b === "total_days") return 1;
+    return Number(b) - Number(a);
+  },
+  value: selected_time,
 });
 const timeRange = Generators.input(timeRanges);
-return {opcionesDias,timeRanges,timeRange};
+return {total_days,opcionesDias,timeRanges,timeRange};
 }});
 
 define({id: "b0ab47b8", inputs: ["localStorage","timeRange"], body: (localStorage,timeRange) => {
 localStorage.setItem("timerange", timeRange);
 }});
 
-define({id: "76d39a7f", inputs: ["drawPlot","data","width","tipo_cotizacion","timeRange","Generators"], outputs: ["plot","observation"], body: (drawPlot,data,width,tipo_cotizacion,timeRange,Generators) => {
-const plot = drawPlot(data, width, tipo_cotizacion, timeRange);
+define({id: "eecc0d5c", inputs: ["Generators"], outputs: ["dark"], body: (Generators) => {
+const dark = Generators.dark();
+return {dark};
+}});
+
+define({id: "77b3e1c9", inputs: ["drawPlot","data","oficial","width","tipo_cotizacion","timeRange","dark","Generators"], outputs: ["plot","observation"], body: (drawPlot,data,oficial,width,tipo_cotizacion,timeRange,dark,Generators) => {
+const plot = drawPlot(data, oficial, width, tipo_cotizacion, timeRange, dark);
 const observation = Generators.input(plot);
 return {plot,observation};
 }});
 
-define({id: "80ddf0d1", inputs: ["observation","data","displayObservation","tipo_cotizacion"], outputs: ["selected","plotHeader"], body: (observation,data,displayObservation,tipo_cotizacion) => {
+define({id: "492db887", inputs: ["observation","data","displayObservation","tipo_cotizacion","oficialMap"], outputs: ["selected","plotHeader"], body: (observation,data,displayObservation,tipo_cotizacion,oficialMap) => {
 const selected = observation ? observation : data.slice(-1)[0];
-const plotHeader = displayObservation(selected, tipo_cotizacion);
+const plotHeader = displayObservation(
+  selected,
+  tipo_cotizacion,
+  oficialMap.get(selected.date)
+);
 return {selected,plotHeader};
 }});
 
-define({id: "3bf90eb5", inputs: ["Inputs","htl","Generators"], outputs: ["bolivianosInitiate","bolivianosInput","bolivianos"], body: (Inputs,htl,Generators) => {
+define({id: "6842829b", inputs: ["Inputs","htl","Generators"], outputs: ["bolivianosInitiate","bolivianosInput","bolivianos"], body: (Inputs,htl,Generators) => {
 const bolivianosInitiate = Inputs.input(100);
 const bolivianosInput = Inputs.bind(
-    htl.html`<input type=number style="width: 80px;">`,
-    bolivianosInitiate
+  htl.html`<input type=number style="width: 80px;">`,
+  bolivianosInitiate
 );
 const bolivianos = Generators.input(bolivianosInput);
 return {bolivianosInitiate,bolivianosInput,bolivianos};
 }});
 
-define({id: "8b4f0959", inputs: ["Event","texto_cotizaciones","htl","selected_cotizacion","input_cotizacion","localStorage"], outputs: ["set","cambio_cotizacion"], body: (Event,texto_cotizaciones,htl,selected_cotizacion,input_cotizacion,localStorage) => {
+define({id: "d81136b0", inputs: ["Event","texto_cotizaciones","htl","selected_cotizacion","input_cotizacion","localStorage"], outputs: ["set","cambio_cotizacion"], body: (Event,texto_cotizaciones,htl,selected_cotizacion,input_cotizacion,localStorage) => {
 function set(input, value) {
-    input.value = value;
-    input.dispatchEvent(new Event("input", { bubbles: true }));
+  input.value = value;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 function cambio_cotizacion(cotizacion) {
-    const texto = texto_cotizaciones(cotizacion);
-    const input_button = htl.html`<span class="cotizacion">${texto}</span>`;
-    if (cotizacion == selected_cotizacion) {
-        input_button.classList.add("selected");
-    }
-    input_button.onclick = () => {
-        set(input_cotizacion, cotizacion);
-        localStorage.setItem("tipo-cotizacion", cotizacion);
-        document.querySelector(".selected").classList.remove("selected");
-        input_button.classList.add("selected");
-        document.querySelector("#cotizacionSeleccionada").textContent = texto;
-    };
-    return input_button;
+  const texto = texto_cotizaciones(cotizacion);
+  const input_button = htl.html`<span class="cotizacion">${texto}</span>`;
+  if (cotizacion == selected_cotizacion) {
+    input_button.classList.add("selected");
+  }
+  input_button.onclick = () => {
+    set(input_cotizacion, cotizacion);
+    localStorage.setItem("tipo-cotizacion", cotizacion);
+    document.querySelector(".selected").classList.remove("selected");
+    input_button.classList.add("selected");
+    document.querySelector("#cotizacionSeleccionada").textContent = texto;
+  };
+  return input_button;
 }
 return {set,cambio_cotizacion};
 }});
@@ -278,17 +307,18 @@ selected.naive ? "y equivale a Bs. " + selected.naive : ""
 </script>
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
-<link rel="stylesheet" href="./_file/style.15cb92ab.css">
-<div class="observablehq observablehq--block"><!--:c7410a86:--></div>
-<div class="observablehq observablehq--block"><!--:47d5d96a:--></div>
-<div class="observablehq observablehq--block"><!--:b69a6d76:--></div>
-<div class="observablehq observablehq--block"><!--:2e291c05:--></div>
-<div class="observablehq observablehq--block"><!--:3b14dd58:--></div>
+<link rel="stylesheet" href="./_file/style.7dc18801.css">
+<div class="observablehq observablehq--block"><!--:0e160895:--></div>
+<div class="observablehq observablehq--block"><!--:d80fe801:--></div>
+<div class="observablehq observablehq--block"><!--:ef4e770f:--></div>
+<div class="observablehq observablehq--block"><!--:4f0781b7:--></div>
+<div class="observablehq observablehq--block"><!--:46d431c0:--></div>
 <div class="observablehq observablehq--block"><!--:b0ab47b8:--></div>
-<div class="observablehq observablehq--block"><!--:76d39a7f:--></div>
-<div class="observablehq observablehq--block"><!--:80ddf0d1:--></div>
-<div class="observablehq observablehq--block"><!--:3bf90eb5:--></div>
-<div class="observablehq observablehq--block"><!--:8b4f0959:--></div>
+<div class="observablehq observablehq--block"><!--:eecc0d5c:--></div>
+<div class="observablehq observablehq--block"><!--:77b3e1c9:--></div>
+<div class="observablehq observablehq--block"><!--:492db887:--></div>
+<div class="observablehq observablehq--block"><!--:6842829b:--></div>
+<div class="observablehq observablehq--block"><!--:d81136b0:--></div>
 <div id="titulo">Dólar en Bolivia</div>
 <div id="opcionesCompraVenta">
     <observablehq-loading></observablehq-loading><!--:9cf6dfe6:-->
@@ -332,18 +362,19 @@ selected.naive ? "y equivale a Bs. " + selected.naive : ""
 <p>La <observablehq-loading></observablehq-loading><!--:daaa1762:-->, que es una idea simple e intuitiva de la tendencia central en el mercado y equivale a Bs. <observablehq-loading></observablehq-loading><!--:f6967881:-->.</p>
 <p>El <observablehq-loading></observablehq-loading><!--:61e0de14:-->, que sería una estimación más correcta de la tendencia central ponderando cada precio listado por el monto que se ofrece. Es el precio que muestro por defecto <observablehq-loading></observablehq-loading><!--:adb395cc:-->.</p>
 <p>Estas opciones son aproximaciones de la tendencia central en el mercado. Pero alguien que quiera comprar o vender dólares probablemente busca valores más extremos. La tercera opción es el <observablehq-loading></observablehq-loading><!--:ce7c2cb0:-->. Este valor representa la cotización de una oferta que se tomaría fácilmente en el mercado <observablehq-loading></observablehq-loading><!--:05c0d78b:-->.</p>
+<p>Finalmente, el 1 de diciembre de 2025 el Banco Central de Bolivia <a href="https://www.bcb.gob.bo/webdocs/files_noticias/COMUNICADO%20DE%20PRENSA%20BCB_DIC_ok.pdf" target="_blank" rel="noopener noreferrer">comenzó a publicar</a> el <em>valor referencial del dólar estadounidense</em> para compra y venta. El valor de compra representa el promedio ponderado del tipo de cambio en operaciones entre entidades de intermediación financiera y sus clientes mayoristas. Y el valor de venta es el tipo de cambio máximo que estas entidades cobran en operaciones con el exterior. Estos valores se deberían publicar diariamente en la página del Banco Central.</p>
 <p>Puedes utilizar todos estos datos como quieras desde <a href="https://github.com/mauforonda/dolares/" target="_blank" rel="noopener noreferrer">el repositorio</a>, que se actualiza cada 30 minutos, más o menos.</p>
 <p>Por favor sólo utiliza estos números como una referencia.</p>
 </div>
 </details></div><div class="center">🪴</div>
 <div id="creditos">
     <div class="credito">
-        <span><a href="https://p2p.binance.com/en/trade/all-payments/USDT?fiat=BOB" target="_blank" rel="noopener noreferrer">Binance P2P</a></span>
-        <span class="creditoNota">fuente</span>
+        <span><a href="https://p2p.binance.com/en/trade/all-payments/USDT?fiat=BOB" target="_blank" rel="noopener noreferrer">Binance P2P</a> + <a href="https://www.bcb.gob.bo/" target="_blank" rel="noopener noreferrer">BCB</a></span>
+        <span class="creditoNota">fuentes</span>
     </div>
     <div>&amp;</div>
     <div class="credito">
-        <span><a href="mailto:mauriforonda@gmail.com" target="_blank" rel="noopener noreferrer">Mauricio Foronda</a></span>
+        <span><a href="https://mauforonda.github.io" target="_blank" rel="noopener noreferrer">Mauricio Foronda</a></span>
         <span class="creditoNota">creación</span>
     </div>
 </div>
