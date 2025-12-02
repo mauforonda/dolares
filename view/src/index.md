@@ -68,7 +68,7 @@ const total_days = new Set(
   })
 ).size;
 const opcionesDias = {
-  total_days: "todo",
+  [total_days]: "todo",
   90: "3 meses",
   30: "1 mes",
   7: "1 semana",
@@ -77,8 +77,6 @@ const opcionesDias = {
 const timeRanges = Inputs.radio(Object.keys(opcionesDias), {
   format: (d) => opcionesDias[d],
   sort: (a, b) => {
-    if (a === "total_days") return -1;
-    if (b === "total_days") return 1;
     return Number(b) - Number(a);
   },
   value: selected_time,
@@ -88,6 +86,10 @@ const timeRange = Generators.input(timeRanges);
 
 ```js
 localStorage.setItem("timerange", timeRange);
+```
+
+```js
+console.log(timeRange);
 ```
 
 ```js

@@ -101,6 +101,8 @@ export function drawPlot(data, oficial, width, campo_precio, dias, dark) {
     ],
   ];
 
+  console.log(dias)
+
   const hours =
     (data.slice(-1)[0].timestamp - data[0].timestamp) / (1000 * 60 * 60);
   const days = hours / 24;
