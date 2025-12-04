@@ -7,6 +7,7 @@ import re
 from datetime import datetime as dt
 import unicodedata
 from pathlib import Path
+from numpy import nan
 
 COMPRA_FN = "buy_oficial.csv"
 VENTA_FN = "sell_oficial.csv"
@@ -14,7 +15,10 @@ VENTA_FN = "sell_oficial.csv"
 
 def normalize(texto, to_float=False):
     if to_float:
-        return float(texto.replace(",", "."))
+        if "-" in texto:
+            return nan
+        else:
+            return float(texto.replace(",", "."))
     return (
         unicodedata.normalize("NFKD", texto.lower().replace(" ", "_"))
         .encode("ascii", "ignore")
