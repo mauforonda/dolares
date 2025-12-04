@@ -90,7 +90,7 @@ def get_compra(session):
 
 def get_venta(session):
     def get_cotizacion(texto, meses):
-        i = re.search(r"(\d{2})-(\w+)-(\d{2})\s*—\s*(\d+,\d+)", texto)
+        i = re.search(r"(\d{2})-(\w+)-(\d{2})\s*—\s*(\d+.\d+)", texto)
         fecha = dt(int("20" + i.group(3)), meses[i.group(2)], int(i.group(1))).strftime(
             "%Y-%m-%d"
         )
