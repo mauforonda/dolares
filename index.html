@@ -72,11 +72,10 @@ const tipo_cotizacion = Generators.input(input_cotizacion);
 return {drawPlot,displayObservation,default_cotizacion,stored_cotizacion,selected_cotizacion,input_cotizacion,tipo_cotizacion};
 }});
 
-define({id: "d80fe801", inputs: ["localStorage"], outputs: ["default_time","stored_time","selected_time"], body: (localStorage) => {
+define({id: "1e6bf285", inputs: ["localStorage"], outputs: ["default_time","stored_time"], body: (localStorage) => {
 const default_time = "30";
-const stored_time = localStorage.getItem("timerange");
-const selected_time = stored_time ? stored_time : default_time;
-return {default_time,stored_time,selected_time};
+const stored_time = localStorage.getItem("timerange") || default_time;
+return {default_time,stored_time};
 }});
 
 define({id: "ef4e770f", inputs: ["Inputs","Generators"], outputs: ["tradeTypes","tradeType","officialRates","texto_cotizaciones"], body: (Inputs,Generators) => {
@@ -101,7 +100,7 @@ const texto_cotizaciones = (cotizacion) => {
 return {tradeTypes,tradeType,officialRates,texto_cotizaciones};
 }});
 
-define({id: "4f0781b7", inputs: ["d3","tradeType"], outputs: ["github","oficial","oficialMap","data"], body: async (d3,tradeType) => {
+define({id: "8dcc8823", inputs: ["d3","tradeType"], outputs: ["github","oficial","oficialMap","data","total_days"], body: async (d3,tradeType) => {
 const github = "https://raw.githubusercontent.com/mauforonda/dolares/main";
 
 const oficial = await d3.csv(`${github}/${tradeType}_oficial.csv`, (d) => ({
@@ -119,18 +118,19 @@ data = data.map((d) => ({
   ...d,
   date: d.timestamp.toISOString().slice(0, 10),
 }));
-return {github,oficial,oficialMap,data};
-}});
 
-define({id: "372b552c", inputs: ["data","Inputs","selected_time","Generators"], outputs: ["total_days","opcionesDias","timeRanges","timeRange"], body: (data,Inputs,selected_time,Generators) => {
 const total_days = new Set(
   data.map((d) => {
     const t = new Date(d.timestamp.getTime() - 4 * 3600e3);
     return t.toISOString().slice(0, 10);
   })
 ).size;
+return {github,oficial,oficialMap,data,total_days};
+}});
+
+define({id: "9a9b6d9b", inputs: ["Inputs","stored_time","Generators"], outputs: ["opcionesDias","timeRanges","timeRangeKey"], body: (Inputs,stored_time,Generators) => {
 const opcionesDias = {
-  [total_days]: "todo",
+  all: "todo",
   90: "3 meses",
   30: "1 mes",
   7: "1 semana",
@@ -139,20 +139,20 @@ const opcionesDias = {
 const timeRanges = Inputs.radio(Object.keys(opcionesDias), {
   format: (d) => opcionesDias[d],
   sort: (a, b) => {
+    if (a === "all") return -1;
+    if (b === "all") return 1;
     return Number(b) - Number(a);
   },
-  value: selected_time,
+  value: stored_time,
 });
-const timeRange = Generators.input(timeRanges);
-return {total_days,opcionesDias,timeRanges,timeRange};
+const timeRangeKey = Generators.input(timeRanges);
+return {opcionesDias,timeRanges,timeRangeKey};
 }});
 
-define({id: "b0ab47b8", inputs: ["localStorage","timeRange"], body: (localStorage,timeRange) => {
-localStorage.setItem("timerange", timeRange);
-}});
-
-define({id: "4bf85c01", inputs: ["timeRange"], body: (timeRange) => {
-console.log(timeRange);
+define({id: "cb49004c", inputs: ["localStorage","timeRangeKey","total_days"], outputs: ["timeRange"], body: (localStorage,timeRangeKey,total_days) => {
+localStorage.setItem("timerange", timeRangeKey);
+const timeRange = timeRangeKey === "all" ? total_days : Number(timeRangeKey);
+return {timeRange};
 }});
 
 define({id: "eecc0d5c", inputs: ["Generators"], outputs: ["dark"], body: (Generators) => {
@@ -311,12 +311,11 @@ selected.naive ? "y equivale a Bs. " + selected.naive : ""
 <main id="observablehq-main" class="observablehq">
 <link rel="stylesheet" href="./_file/style.7dc18801.css">
 <div class="observablehq observablehq--block"><!--:0e160895:--></div>
-<div class="observablehq observablehq--block"><!--:d80fe801:--></div>
+<div class="observablehq observablehq--block"><!--:1e6bf285:--></div>
 <div class="observablehq observablehq--block"><!--:ef4e770f:--></div>
-<div class="observablehq observablehq--block"><!--:4f0781b7:--></div>
-<div class="observablehq observablehq--block"><!--:372b552c:--></div>
-<div class="observablehq observablehq--block"><!--:b0ab47b8:--></div>
-<div class="observablehq observablehq--block"><!--:4bf85c01:--></div>
+<div class="observablehq observablehq--block"><!--:8dcc8823:--></div>
+<div class="observablehq observablehq--block"><!--:9a9b6d9b:--></div>
+<div class="observablehq observablehq--block"><!--:cb49004c:--></div>
 <div class="observablehq observablehq--block"><!--:eecc0d5c:--></div>
 <div class="observablehq observablehq--block"><!--:77b3e1c9:--></div>
 <div class="observablehq observablehq--block"><!--:492db887:--></div>
