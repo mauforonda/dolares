@@ -15,8 +15,7 @@ const tipo_cotizacion = Generators.input(input_cotizacion);
 
 ```js
 const default_time = "30";
-const stored_time = localStorage.getItem("timerange");
-const selected_time = stored_time ? stored_time : default_time;
+const stored_time = localStorage.getItem("timerange") || default_time;
 ```
 
 ```js
@@ -58,17 +57,18 @@ data = data.map((d) => ({
   ...d,
   date: d.timestamp.toISOString().slice(0, 10),
 }));
-```
 
-```js
 const total_days = new Set(
   data.map((d) => {
     const t = new Date(d.timestamp.getTime() - 4 * 3600e3);
     return t.toISOString().slice(0, 10);
   })
 ).size;
+```
+
+```js
 const opcionesDias = {
-  [total_days]: "todo",
+  all: "todo",
   90: "3 meses",
   30: "1 mes",
   7: "1 semana",
@@ -77,19 +77,18 @@ const opcionesDias = {
 const timeRanges = Inputs.radio(Object.keys(opcionesDias), {
   format: (d) => opcionesDias[d],
   sort: (a, b) => {
+    if (a === "all") return -1;
+    if (b === "all") return 1;
     return Number(b) - Number(a);
   },
-  value: selected_time,
+  value: stored_time,
 });
-const timeRange = Generators.input(timeRanges);
+const timeRangeKey = Generators.input(timeRanges);
 ```
 
 ```js
-localStorage.setItem("timerange", timeRange);
-```
-
-```js
-console.log(timeRange);
+localStorage.setItem("timerange", timeRangeKey);
+const timeRange = timeRangeKey === "all" ? total_days : Number(timeRangeKey);
 ```
 
 ```js
