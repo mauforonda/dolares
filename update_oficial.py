@@ -15,7 +15,7 @@ VENTA_FN = "sell_oficial.csv"
 
 def normalize(texto, to_float=False):
     if to_float:
-        if "-" in texto:
+        if "-" in texto or '—' in texto:
             return nan
         else:
             return float(texto.replace(",", "."))
@@ -118,6 +118,8 @@ def consolidar(df, filename):
 
 
 session = requests.Session()
+
+compra = get_compra(session)
 
 compra = get_compra(session)
 consolidar(pd.DataFrame([compra]), COMPRA_FN)
