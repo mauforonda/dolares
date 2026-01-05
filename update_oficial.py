@@ -9,13 +9,14 @@ import unicodedata
 from pathlib import Path
 from numpy import nan
 
-COMPRA_FN = "buy_oficial.csv"
+COMPRA_FN_COTIZACION = "buy_oficial.csv"
+COMPRA_FN_MONTO = "buy_oficial_monto.csv"
 VENTA_FN = "sell_oficial.csv"
 
 
 def normalize(texto, to_float=False):
     if to_float:
-        if "-" in texto or '—' in texto:
+        if "-" in texto or "—" in texto:
             return nan
         else:
             return float(texto.replace(",", "."))
@@ -70,42 +71,78 @@ def get_compra(session):
         )
 
     def get_cotizaciones(html):
-        return {
-            normalize(banco.get_text()): normalize(cotizacion.get_text(), True)
-            for banco, cotizacion in zip(
-                html.select(".cell-text"), html.select(".cell-value")
-            )
+        bancos = html.select(".cell-text")
+        valores = html.select(".cell-value")
+        cotizaciones = [valores[i - 1] for i in range(1, len(valores) + 1, 2)]
+        montos = [valores[i] for i in range(1, len(valores) + 1, 2)]
+
+        cotizaciones_por_banco = {
+            normalize(banco.get_text()): normalize(i.get_text(), True)
+            for banco, i in zip(bancos, cotizaciones)
         }
+
+        montos_por_banco = {
+            normalize(banco.get_text()): normalize(i.get_text().replace(".", ""), True)
+            for banco, i in zip(bancos, montos)
+        }
+
+        return [cotizaciones_por_banco, montos_por_banco]
 
     def get_promedio(html):
         return normalize(html.select(".average-value")[0].get_text(), True)
 
-    URL = "https://www.bcb.gob.bo/?q=content/tipo-de-cambio-promedio-ponderado-para-clientes-preferenciales"
+    def get_total(html):
+        return normalize(
+            html.select(".average-value")[1].get_text().replace(".", ""), True
+        )
+
+    URL = "https://www.bcb.gob.bo/?q=content/valor-referencial-de-compra-del-d%C3%B3lar-estadounidense-1"
 
     r = session.get(URL)
     html = BeautifulSoup(r.text, "html.parser")
 
     fecha = get_fecha(html)
-    cotizaciones = get_cotizaciones(html)
+    cotizaciones, montos = get_cotizaciones(html)
     promedio = get_promedio(html)
+    total = get_total(html)
 
-    return {"timestamp": fecha, **cotizaciones, "value": promedio}
+    return [
+        {"timestamp": fecha, **cotizaciones, "value": promedio},
+        {"timestamp": fecha, **montos, "value": total},
+    ]
 
 
 def get_venta(session):
-    def get_cotizacion(texto, meses):
-        i = re.search(r"(\d{2})-(\w+)-(\d{2})\s*—\s*(\d+.\d+)", texto)
-        fecha = dt(int("20" + i.group(3)), meses[i.group(2)], int(i.group(1))).strftime(
-            "%Y-%m-%d"
-        )
-        cotizacion = normalize(i.group(4), True)
-        return {"timestamp": fecha, "value": cotizacion}
+    def get_cotizaciones(
+        html, selector_text=".cell-text", selector_value=".cell-value"
+    ):
+        def get_fecha(texto):
+            d = re.search(r"(\d{1,2})\s+de\s+(\w+)\s+de\s+(\d{4})", texto)
+            return dt(int(d.group(3)), meses[d.group(2)], int(d.group(1))).strftime(
+                "%Y-%m-%d"
+            )
 
-    URL = "https://www.bcb.gob.bo/?q=content/valor-referencial-del-d%C3%B3lar-estadounidense-para-operaciones-con-el-exterior"
+        return [
+            {
+                "timestamp": get_fecha(fecha.get_text()),
+                "value": normalize(cotizacion.get_text(), True),
+            }
+            for fecha, cotizacion in zip(
+                html.select(selector_text), html.select(selector_value)
+            )
+        ]
+
+    URL = "https://www.bcb.gob.bo/?q=content/valor-referencial-de-venta-del-d%C3%B3lar-estadounidense-0"
     r = session.get(URL)
     html = BeautifulSoup(r.text, "html.parser")
-    meses = codigo_meses(True)
-    return [get_cotizacion(i.get_text(), meses) for i in html.select("circle title")]
+    meses = codigo_meses(False)
+    cotizaciones = []
+    for s in [
+        {"text": ".cell-text", "value": ".cell-value"},
+        {"text": ".cell-text--highlight", "value": ".cell-value--highlight"},
+    ]:
+        cotizaciones.extend(get_cotizaciones(html, s["text"], s["value"]))
+    return cotizaciones
 
 
 def consolidar(df, filename):
@@ -121,8 +158,9 @@ session = requests.Session()
 
 compra = get_compra(session)
 
-compra = get_compra(session)
-consolidar(pd.DataFrame([compra]), COMPRA_FN)
+compra_cotizacion, compra_monto = get_compra(session)
+consolidar(pd.DataFrame([compra_cotizacion]), COMPRA_FN_COTIZACION)
+consolidar(pd.DataFrame([compra_monto]), COMPRA_FN_MONTO)
 
 venta = get_venta(session)
 consolidar(pd.DataFrame(venta), VENTA_FN)
