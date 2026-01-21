@@ -96,10 +96,10 @@ def get_compra(session):
             html.select(".average-value")[1].get_text().replace(".", ""), True
         )
 
-    URL = "https://www.bcb.gob.bo/?q=content/valor-referencial-de-compra-del-d%C3%B3lar-estadounidense-1"
+    URL = "https://www.bcb.gob.bo/valor_referencial_compra_svg.php"
 
     r = session.get(URL)
-    html = BeautifulSoup(r.text, "html.parser")
+    html = BeautifulSoup(r.text, "xml")
 
     fecha = get_fecha(html)
     cotizaciones, montos = get_cotizaciones(html)
@@ -132,9 +132,9 @@ def get_venta(session):
             )
         ]
 
-    URL = "https://www.bcb.gob.bo/?q=content/valor-referencial-de-venta-del-d%C3%B3lar-estadounidense-0"
+    URL = "https://www.bcb.gob.bo/valor_referencial_venta_svg.php"
     r = session.get(URL)
-    html = BeautifulSoup(r.text, "html.parser")
+    html = BeautifulSoup(r.text, "xml")
     meses = codigo_meses(False)
     cotizaciones = []
     for s in [
