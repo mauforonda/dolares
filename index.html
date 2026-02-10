@@ -32,7 +32,7 @@
 <link rel="modulepreload" href="./_npm/d3-ease@3.0.1/_esm.js">
 <link rel="modulepreload" href="./_npm/d3-fetch@3.0.1/_esm.js">
 <link rel="modulepreload" href="./_npm/d3-force@3.0.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-format@3.1.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-format@3.1.2/_esm.js">
 <link rel="modulepreload" href="./_npm/d3-geo@3.1.1/_esm.js">
 <link rel="modulepreload" href="./_npm/d3-hierarchy@3.1.2/_esm.js">
 <link rel="modulepreload" href="./_npm/d3-interpolate@3.0.1/_esm.js">
@@ -100,7 +100,7 @@ const texto_cotizaciones = (cotizacion) => {
 return {tradeTypes,tradeType,officialRates,texto_cotizaciones};
 }});
 
-define({id: "8dcc8823", inputs: ["d3","tradeType"], outputs: ["github","oficial","oficialMap","data","total_days"], body: async (d3,tradeType) => {
+define({id: "d0a28396", inputs: ["d3","tradeType"], outputs: ["github","oficial","oficialMap","oficialSeries","oficialDateBisector","officialValueAtOrBefore","data","total_days"], body: async (d3,tradeType) => {
 const github = "https://raw.githubusercontent.com/mauforonda/dolares/main";
 
 const oficial = await d3.csv(`${github}/${tradeType}_oficial.csv`, (d) => ({
@@ -111,6 +111,20 @@ const oficial = await d3.csv(`${github}/${tradeType}_oficial.csv`, (d) => ({
 const oficialMap = new Map(
   oficial.map((o) => [o.timestamp.toISOString().slice(0, 10), o.value])
 );
+const oficialSeries = oficial
+  .map((o) => ({
+    date: o.timestamp.toISOString().slice(0, 10),
+    value: o.value,
+  }))
+  .sort((a, b) => d3.ascending(a.date, b.date));
+const oficialDateBisector = d3.bisector((d) => d.date).right;
+
+function officialValueAtOrBefore(date) {
+  const exact = oficialMap.get(date);
+  if (exact !== undefined) return exact;
+  const i = oficialDateBisector(oficialSeries, date) - 1;
+  return i >= 0 ? oficialSeries[i].value : undefined;
+}
 
 let data = await d3.csv(`${github}/${tradeType}.csv`, d3.autoType);
 
@@ -125,7 +139,7 @@ const total_days = new Set(
     return t.toISOString().slice(0, 10);
   })
 ).size;
-return {github,oficial,oficialMap,data,total_days};
+return {github,oficial,oficialMap,oficialSeries,oficialDateBisector,officialValueAtOrBefore,data,total_days};
 }});
 
 define({id: "9a9b6d9b", inputs: ["Inputs","stored_time","Generators"], outputs: ["opcionesDias","timeRanges","timeRangeKey"], body: (Inputs,stored_time,Generators) => {
@@ -166,12 +180,12 @@ const observation = Generators.input(plot);
 return {plot,observation};
 }});
 
-define({id: "492db887", inputs: ["observation","data","displayObservation","tipo_cotizacion","oficialMap"], outputs: ["selected","plotHeader"], body: (observation,data,displayObservation,tipo_cotizacion,oficialMap) => {
+define({id: "bef4a977", inputs: ["observation","data","displayObservation","tipo_cotizacion","officialValueAtOrBefore"], outputs: ["selected","plotHeader"], body: (observation,data,displayObservation,tipo_cotizacion,officialValueAtOrBefore) => {
 const selected = observation ? observation : data.slice(-1)[0];
 const plotHeader = displayObservation(
   selected,
   tipo_cotizacion,
-  oficialMap.get(selected.date)
+  officialValueAtOrBefore(selected.date)
 );
 return {selected,plotHeader};
 }});
@@ -313,12 +327,12 @@ selected.naive ? "y equivale a Bs. " + selected.naive : ""
 <div class="observablehq observablehq--block"><!--:0e160895:--></div>
 <div class="observablehq observablehq--block"><!--:1e6bf285:--></div>
 <div class="observablehq observablehq--block"><!--:ef4e770f:--></div>
-<div class="observablehq observablehq--block"><!--:8dcc8823:--></div>
+<div class="observablehq observablehq--block"><!--:d0a28396:--></div>
 <div class="observablehq observablehq--block"><!--:9a9b6d9b:--></div>
 <div class="observablehq observablehq--block"><!--:cb49004c:--></div>
 <div class="observablehq observablehq--block"><!--:eecc0d5c:--></div>
 <div class="observablehq observablehq--block"><!--:77b3e1c9:--></div>
-<div class="observablehq observablehq--block"><!--:492db887:--></div>
+<div class="observablehq observablehq--block"><!--:bef4a977:--></div>
 <div class="observablehq observablehq--block"><!--:6842829b:--></div>
 <div class="observablehq observablehq--block"><!--:d81136b0:--></div>
 <div id="titulo">Dólar en Bolivia</div>
