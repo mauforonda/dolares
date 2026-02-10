@@ -10,6 +10,7 @@ from pathlib import Path
 from numpy import nan
 
 COMPRA_FN_COTIZACION = "buy_oficial.csv"
+COMPRA_FN_COTIZACION_COMPLETO = "buy_oficial_completo.csv"
 COMPRA_FN_MONTO = "buy_oficial_monto.csv"
 VENTA_FN = "sell_oficial.csv"
 
@@ -157,9 +158,11 @@ def consolidar(df, filename):
 session = requests.Session()
 
 compra = get_compra(session)
-
 compra_cotizacion, compra_monto = get_compra(session)
-consolidar(pd.DataFrame([compra_cotizacion]), COMPRA_FN_COTIZACION)
+compra_cotizacion = pd.DataFrame([compra_cotizacion])
+
+consolidar(compra_cotizacion[["timestamp", "value"]], COMPRA_FN_COTIZACION)
+consolidar(compra_cotizacion, COMPRA_FN_COTIZACION_COMPLETO)
 consolidar(pd.DataFrame([compra_monto]), COMPRA_FN_MONTO)
 
 venta = get_venta(session)

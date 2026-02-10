@@ -50,6 +50,20 @@ const oficial = await d3.csv(`${github}/${tradeType}_oficial.csv`, (d) => ({
 const oficialMap = new Map(
   oficial.map((o) => [o.timestamp.toISOString().slice(0, 10), o.value])
 );
+const oficialSeries = oficial
+  .map((o) => ({
+    date: o.timestamp.toISOString().slice(0, 10),
+    value: o.value,
+  }))
+  .sort((a, b) => d3.ascending(a.date, b.date));
+const oficialDateBisector = d3.bisector((d) => d.date).right;
+
+function officialValueAtOrBefore(date) {
+  const exact = oficialMap.get(date);
+  if (exact !== undefined) return exact;
+  const i = oficialDateBisector(oficialSeries, date) - 1;
+  return i >= 0 ? oficialSeries[i].value : undefined;
+}
 
 let data = await d3.csv(`${github}/${tradeType}.csv`, d3.autoType);
 
@@ -105,7 +119,7 @@ const selected = observation ? observation : data.slice(-1)[0];
 const plotHeader = displayObservation(
   selected,
   tipo_cotizacion,
-  oficialMap.get(selected.date)
+  officialValueAtOrBefore(selected.date)
 );
 ```
 
