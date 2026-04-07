@@ -20,7 +20,7 @@ def normalize(texto, to_float=False):
         if "-" in texto or "—" in texto:
             return nan
         else:
-            return float(texto.replace(",", "."))
+            return float(texto.replace(".", "").replace(",", "."))
     return (
         unicodedata.normalize("NFKD", texto.lower().replace(" ", "_"))
         .encode("ascii", "ignore")
@@ -74,8 +74,8 @@ def get_compra(session):
     def get_cotizaciones(html):
         bancos = html.select(".cell-text")
         valores = html.select(".cell-value")
-        cotizaciones = [valores[i - 1] for i in range(1, len(valores) + 1, 2)]
-        montos = [valores[i] for i in range(1, len(valores) + 1, 2)]
+        cotizaciones = [valores[i - 1] for i in range(1, len(valores) + 1, 3)]
+        montos = [valores[i] for i in range(1, len(valores) + 1, 3)]
 
         cotizaciones_por_banco = {
             normalize(banco.get_text()): normalize(i.get_text(), True)
