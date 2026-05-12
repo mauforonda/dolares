@@ -2,7 +2,7 @@ name: actualizar_oficial
 
 on:
   schedule:
-    - cron: '0 13-23/2 * * *'
+    - cron: '0 0-22/2 * * *'
   workflow_dispatch:
 
 permissions:
