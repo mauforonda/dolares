@@ -3,7 +3,7 @@
 ```js
 import { drawPlot, displayObservation } from "./components/plot.js";
 
-const default_cotizacion = "vwap";
+const default_cotizacion = "naive";
 const stored_cotizacion = localStorage.getItem("tipo-cotizacion");
 const selected_cotizacion = stored_cotizacion
   ? stored_cotizacion
@@ -24,10 +24,6 @@ const tradeTypes = Inputs.radio(["buy", "sell"], {
   value: "buy",
 });
 const tradeType = Generators.input(tradeTypes);
-const officialRates = {
-  buy: 6.86,
-  sell: 6.96,
-};
 
 const texto_cotizaciones = (cotizacion) => {
   const opciones = {
@@ -45,11 +41,25 @@ const fileByTradeType = {
   buy: "compra",
   sell: "venta",
 };
+const oficialCutoff = "2026-06-29";
 
-const oficial = await d3.csv(`${github}/datos/referencial_bcb/${fileByTradeType[tradeType]}.csv`, (d) => ({
+const parseDailyRate = (d) => ({
   timestamp: new Date(d.timestamp + "T00:00-04:00"),
   value: +d.value,
-}));
+});
+
+const referencialBcb = await d3.csv(
+  `${github}/datos/referencial_bcb/${fileByTradeType[tradeType]}.csv`,
+  parseDailyRate
+);
+const oficialNuevo = await d3.csv(
+  `${github}/datos/oficial/${fileByTradeType[tradeType]}.csv`,
+  parseDailyRate
+);
+const oficial = [
+  ...referencialBcb.filter((d) => d.timestamp.toISOString().slice(0, 10) < oficialCutoff),
+  ...oficialNuevo.filter((d) => d.timestamp.toISOString().slice(0, 10) >= oficialCutoff),
+];
 
 const oficialMap = new Map(
   oficial.map((o) => [o.timestamp.toISOString().slice(0, 10), o.value])
@@ -67,6 +77,10 @@ function officialValueAtOrBefore(date) {
   if (exact !== undefined) return exact;
   const i = oficialDateBisector(oficialSeries, date) - 1;
   return i >= 0 ? oficialSeries[i].value : undefined;
+}
+
+function officialLabelAtOrBefore(date) {
+  return date < oficialCutoff ? "Referencial" : "Oficial";
 }
 
 let data = await d3.csv(`${github}/datos/binance/${fileByTradeType[tradeType]}.csv`, d3.autoType);
@@ -123,17 +137,9 @@ const selected = observation ? observation : data.slice(-1)[0];
 const plotHeader = displayObservation(
   selected,
   tipo_cotizacion,
-  officialValueAtOrBefore(selected.date)
+  officialValueAtOrBefore(selected.date),
+  officialLabelAtOrBefore(selected.date)
 );
-```
-
-```js
-const bolivianosInitiate = Inputs.input(100);
-const bolivianosInput = Inputs.bind(
-  htl.html`<input type=number style="width: 80px;">`,
-  bolivianosInitiate
-);
-const bolivianos = Generators.input(bolivianosInput);
 ```
 
 ```js
@@ -181,40 +187,24 @@ function cambio_cotizacion(cotizacion) {
     </div>
 </div>
 
-<div id="devaluacion">
-    <div>
-        Bs. ${bolivianosInput}
-        <span> equivalen a </span>
-        <span class="underlined">${ bolivianos ? d3.format(".2f")(bolivianos / selected[tipo_cotizacion]) : "🤷" } Dólares</span>,
-    </div>
-    <div>
-        <span>que al tipo de cambio oficial serían</span>
-        <span class="underlined">${bolivianos ? d3.format(".2f")(bolivianos / officialRates[tradeType]) : "🤷" } Dólares</span>.
-    </div>
-    <div>
-        <span>Una devaluación del </span>
-        <span class="underlined">${(d3.format(".2%")(1 - (officialRates[tradeType] / selected[tipo_cotizacion])))}</span>.
-    </div>
-</div>
-
 <div id="explicacion">
     <details>
         <summary>¿De dónde salen estos números?</summary>
         <div class="content">
 
-[Binance P2P](https://p2p.binance.com/en/trade/all-payments/USDT?fiat=BOB) es un mercado en internet donde la gente puede comprar y vender USDT, una criptomoneda cuya cotización simula el valor del dólar americano. El valor de USDT tiende a subir y bajar junto al valor del dólar en la calle. Cuando alguien quiere vender USDT por bolivianos, ingresa a Binance P2P y publica una oferta, que consiste en una cotización y un monto. Binance P2P lista docenas de ofertas todo el tiempo.
+El Banco Central de Bolivia [publica](https://www.bcb.gob.bo/) los tipos de cambio oficial y referencial como promedios ponderados de operaciones cambiarias en entidades financieras para días hábiles.
 
-Sin embargo, este listado no incluye una cotización estimada de mercado o información de qué ofertas se toman efectivamente. Es sólo una lista de ofertas. Entonces ¿de dónde sale que 1 Dólar equivale a ${selected[tipo_cotizacion]} Bolivianos? ¿Cómo consolidar la información de este listado en un sólo valor referencial?
+El tipo de cambio Binance se construye con las ofertas de USDT en el mercado Binance P2P para USDT por bolivianos. [Binance P2P](https://p2p.binance.com/en/trade/all-payments/USDT?fiat=BOB) es un mercado en internet donde la gente puede comprar y vender USDT, una criptomoneda cuya cotización simula el valor del dólar americano. El valor de USDT tiende a subir y bajar junto al valor del dólar en la calle. Cuando alguien quiere vender USDT por bolivianos, ingresa a Binance P2P y publica una oferta, que consiste en una cotización y un monto. Binance P2P lista docenas de ofertas todo el tiempo.
+
+Sin embargo, este listado no incluye una cotización estimada de mercado o información de qué ofertas se toman efectivamente. Es sólo una lista de ofertas. Entonces ¿de dónde sale que 1 Dólar equivale a ${selected[tipo_cotizacion]} Bolivianos y cómo consolidar la información de este listado en un sólo valor referencial?
 
 Ofrezco 3 opciones:
 
 La ${cambio_cotizacion("median")}, que es una idea simple e intuitiva de la tendencia central en el mercado y equivale a Bs. ${selected.median}.
 
-El ${cambio_cotizacion("vwap")}, que sería una estimación más correcta de la tendencia central ponderando cada precio listado por el monto que se ofrece. Es el precio que muestro por defecto ${selected.vwap ? "y equivale a Bs. " + selected.vwap : ""}.
+El ${cambio_cotizacion("vwap")}, que sería una estimación más correcta de la tendencia central ponderando cada precio listado por el monto que se ofrece ${selected.vwap ? "y equivale a Bs. " + selected.vwap : ""}.
 
 Estas opciones son aproximaciones de la tendencia central en el mercado. Pero alguien que quiera comprar o vender dólares probablemente busca valores más extremos. La tercera opción es el ${cambio_cotizacion("naive")}. Este valor representa la cotización de una oferta que se tomaría fácilmente en el mercado ${selected.naive ? "y equivale a Bs. " + selected.naive : ""}.
-
-Finalmente, el 1 de diciembre de 2025 el Banco Central de Bolivia [comenzó a publicar](https://www.bcb.gob.bo/webdocs/files_noticias/COMUNICADO%20DE%20PRENSA%20BCB_DIC_ok.pdf) el _valor referencial del dólar estadounidense_ para compra y venta. El valor de compra representa el promedio ponderado del tipo de cambio en operaciones entre entidades de intermediación financiera y sus clientes mayoristas. Y el valor de venta es el tipo de cambio máximo que estas entidades cobran en operaciones con el exterior. Estos valores se deberían publicar diariamente en la página del Banco Central.
 
 Puedes utilizar todos estos datos como quieras desde [el repositorio](https://github.com/mauforonda/dolares/), que se actualiza cada 30 minutos, más o menos.
 

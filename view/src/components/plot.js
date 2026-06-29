@@ -40,7 +40,7 @@ function withGradient({ color, id = "gradient" }, callback) {
     callback(`url(#${id})`),
     () => svg`<defs>
         <linearGradient id=${id} gradientTransform="rotate(90)">
-          <stop offset=0% stop-color=${color} stop-opacity=0.3 />
+          <stop offset=0% stop-color=${color} stop-opacity=0.25 />
           <stop offset=100% stop-color=${color} stop-opacity=0 />
         </linearGradient>
       </defs>`,
@@ -112,7 +112,7 @@ export function drawPlot(data, oficial, width, campo_precio, dias, dark) {
     base: dark ? "#d7e7f7" : "#4f6882",
     background: "#eff4f4",
     figures: "#34A853",
-    oficial: "#4da4c4ff",
+    oficial: "rgb(34, 101, 215)",
   };
 
   const [min, max] = [
@@ -146,13 +146,6 @@ export function drawPlot(data, oficial, width, campo_precio, dias, dark) {
     zero: false,
   };
 
-  const dotLimit = {
-    x: "timestamp",
-    r: 2,
-    stroke: null,
-    fill: colors.base,
-  };
-
   const dotMedian = {
     x: "timestamp",
     y: campo_precio,
@@ -161,6 +154,18 @@ export function drawPlot(data, oficial, width, campo_precio, dias, dark) {
     x: "timestamp",
     y: "value",
   };
+  let oficialIndex = 0;
+  const oficialPointer = data.flatMap((d) => {
+    while (
+      oficialIndex < oficial.length - 1 &&
+      oficial[oficialIndex + 1].timestamp <= d.timestamp
+    ) {
+      oficialIndex++;
+    }
+    return oficial[oficialIndex]?.timestamp <= d.timestamp
+      ? [{ ...d, value: oficial[oficialIndex].value }]
+      : [];
+  });
 
   return Plot.plot({
     height: 550,
@@ -215,6 +220,18 @@ export function drawPlot(data, oficial, width, campo_precio, dias, dark) {
         strokeOpacity: 0.4,
         sort: "timestamp",
       }),
+      Plot.dot(
+        oficialPointer,
+        Plot.pointerX({
+          ...dotOficial,
+          r: 4,
+          fill: colors.oficial,
+          fillOpacity: 1,
+          stroke: colors.oficial,
+          strokeWidth: 10,
+          strokeOpacity: 0.2,
+        })
+      ),
       withGradient({ color: colors.figures }, (fill) =>
         Plot.areaY(data, {
           ...dotMedian,
@@ -252,25 +269,16 @@ export function drawPlot(data, oficial, width, campo_precio, dias, dark) {
           strokeDasharray: 2,
         })
       ),
-      Plot.dot(
-        data,
-        Plot.pointerX({
-          ...dotLimit,
-          y: "low",
-        })
-      ),
-      Plot.dot(
-        data,
-        Plot.pointerX({
-          ...dotLimit,
-          y: "high",
-        })
-      ),
     ],
   });
 }
 
-export function displayObservation(observation, campo_precio, precio_oficial) {
+export function displayObservation(
+  observation,
+  campo_precio,
+  precio_oficial,
+  etiqueta_oficial
+) {
   const numberFormat = format(".2f");
   const timeFormat = Intl.DateTimeFormat("es-BO", {
     month: "long",
@@ -298,7 +306,7 @@ export function displayObservation(observation, campo_precio, precio_oficial) {
           </div>
 
           <div class="variety">
-            <div class="annotation fuente">BCB</div>
+            <div class="annotation fuente">${etiqueta_oficial}</div>
             <div class="midValue">
               <div class="value oficial">
                 ${precio_oficial ? numberFormat(precio_oficial) : "~"}
