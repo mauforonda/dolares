@@ -1,6 +1,6 @@
 import * as Plot from "../../_npm/@observablehq/plot@0.6.17/_esm.js";
 
-import { html, svg } from "../../_npm/htl@0.3.1/_esm.js";
+import { html, svg } from "../../_npm/htl@1.0.0/_esm.js";
 import { format } from "../../_npm/d3@7.9.0/_esm.js";
 
 const timeTickFormat = () => {

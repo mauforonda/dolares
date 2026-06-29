@@ -14,7 +14,7 @@
 <link rel="modulepreload" href="./_observablehq/stdlib.js">
 <link rel="modulepreload" href="./_import/components/plot.ab02ccfd.js">
 <link rel="modulepreload" href="./_npm/@observablehq/plot@0.6.17/_esm.js">
-<link rel="modulepreload" href="./_npm/htl@0.3.1/_esm.js">
+<link rel="modulepreload" href="./_npm/htl@1.0.0/_esm.js">
 <link rel="modulepreload" href="./_npm/d3@7.9.0/_esm.js">
 <link rel="modulepreload" href="./_observablehq/stdlib/inputs.js">
 <link rel="modulepreload" href="./_npm/isoformat@0.2.1/_esm.js">
@@ -51,8 +51,8 @@
 <link rel="modulepreload" href="./_npm/d3-zoom@3.0.0/_esm.js">
 <link rel="modulepreload" href="./_npm/binary-search-bounds@2.0.5/_esm.js">
 <link rel="modulepreload" href="./_npm/internmap@2.0.3/_esm.js">
-<link rel="modulepreload" href="./_npm/delaunator@5.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/robust-predicates@3.0.2/_esm.js">
+<link rel="modulepreload" href="./_npm/delaunator@5.1.0/_esm.js">
+<link rel="modulepreload" href="./_npm/robust-predicates@3.0.3/_esm.js">
 <link rel="icon" href="https://mauforonda.github.io/images/icon.svg" type="image/png">
 <script type="module">
 
@@ -100,10 +100,14 @@ const texto_cotizaciones = (cotizacion) => {
 return {tradeTypes,tradeType,officialRates,texto_cotizaciones};
 }});
 
-define({id: "d0a28396", inputs: ["d3","tradeType"], outputs: ["github","oficial","oficialMap","oficialSeries","oficialDateBisector","officialValueAtOrBefore","data","total_days"], body: async (d3,tradeType) => {
+define({id: "e6aebb7a", inputs: ["d3","tradeType"], outputs: ["github","fileByTradeType","oficial","oficialMap","oficialSeries","oficialDateBisector","officialValueAtOrBefore","data","total_days"], body: async (d3,tradeType) => {
 const github = "https://raw.githubusercontent.com/mauforonda/dolares/main";
+const fileByTradeType = {
+  buy: "compra",
+  sell: "venta",
+};
 
-const oficial = await d3.csv(`${github}/${tradeType}_oficial.csv`, (d) => ({
+const oficial = await d3.csv(`${github}/datos/referencial_bcb/${fileByTradeType[tradeType]}.csv`, (d) => ({
   timestamp: new Date(d.timestamp + "T00:00-04:00"),
   value: +d.value,
 }));
@@ -126,7 +130,7 @@ function officialValueAtOrBefore(date) {
   return i >= 0 ? oficialSeries[i].value : undefined;
 }
 
-let data = await d3.csv(`${github}/${tradeType}.csv`, d3.autoType);
+let data = await d3.csv(`${github}/datos/binance/${fileByTradeType[tradeType]}.csv`, d3.autoType);
 
 data = data.map((d) => ({
   ...d,
@@ -139,7 +143,7 @@ const total_days = new Set(
     return t.toISOString().slice(0, 10);
   })
 ).size;
-return {github,oficial,oficialMap,oficialSeries,oficialDateBisector,officialValueAtOrBefore,data,total_days};
+return {github,fileByTradeType,oficial,oficialMap,oficialSeries,oficialDateBisector,officialValueAtOrBefore,data,total_days};
 }});
 
 define({id: "9a9b6d9b", inputs: ["Inputs","stored_time","Generators"], outputs: ["opcionesDias","timeRanges","timeRangeKey"], body: (Inputs,stored_time,Generators) => {
@@ -327,7 +331,7 @@ selected.naive ? "y equivale a Bs. " + selected.naive : ""
 <div class="observablehq observablehq--block"><!--:0e160895:--></div>
 <div class="observablehq observablehq--block"><!--:1e6bf285:--></div>
 <div class="observablehq observablehq--block"><!--:ef4e770f:--></div>
-<div class="observablehq observablehq--block"><!--:d0a28396:--></div>
+<div class="observablehq observablehq--block"><!--:e6aebb7a:--></div>
 <div class="observablehq observablehq--block"><!--:9a9b6d9b:--></div>
 <div class="observablehq observablehq--block"><!--:cb49004c:--></div>
 <div class="observablehq observablehq--block"><!--:eecc0d5c:--></div>
