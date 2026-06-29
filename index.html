@@ -12,7 +12,7 @@
 <link rel="modulepreload" href="./_observablehq/client.js">
 <link rel="modulepreload" href="./_observablehq/runtime.js">
 <link rel="modulepreload" href="./_observablehq/stdlib.js">
-<link rel="modulepreload" href="./_import/components/plot.ab02ccfd.js">
+<link rel="modulepreload" href="./_import/components/plot.cc843542.js">
 <link rel="modulepreload" href="./_npm/@observablehq/plot@0.6.17/_esm.js">
 <link rel="modulepreload" href="./_npm/htl@1.0.0/_esm.js">
 <link rel="modulepreload" href="./_npm/d3@7.9.0/_esm.js">
@@ -58,10 +58,10 @@
 
 import {define} from "./_observablehq/client.js";
 
-define({id: "0e160895", inputs: ["localStorage","Inputs","Generators"], outputs: ["drawPlot","displayObservation","default_cotizacion","stored_cotizacion","selected_cotizacion","input_cotizacion","tipo_cotizacion"], body: async (localStorage,Inputs,Generators) => {
-const {drawPlot, displayObservation} = await import("./_import/components/plot.ab02ccfd.js");
+define({id: "b35023de", inputs: ["localStorage","Inputs","Generators"], outputs: ["drawPlot","displayObservation","default_cotizacion","stored_cotizacion","selected_cotizacion","input_cotizacion","tipo_cotizacion"], body: async (localStorage,Inputs,Generators) => {
+const {drawPlot, displayObservation} = await import("./_import/components/plot.cc843542.js");
 
-const default_cotizacion = "vwap";
+const default_cotizacion = "naive";
 const stored_cotizacion = localStorage.getItem("tipo-cotizacion");
 const selected_cotizacion = stored_cotizacion
   ? stored_cotizacion
@@ -78,16 +78,12 @@ const stored_time = localStorage.getItem("timerange") || default_time;
 return {default_time,stored_time};
 }});
 
-define({id: "ef4e770f", inputs: ["Inputs","Generators"], outputs: ["tradeTypes","tradeType","officialRates","texto_cotizaciones"], body: (Inputs,Generators) => {
+define({id: "220a931b", inputs: ["Inputs","Generators"], outputs: ["tradeTypes","tradeType","texto_cotizaciones"], body: (Inputs,Generators) => {
 const tradeTypes = Inputs.radio(["buy", "sell"], {
   format: (d) => (d == "buy" ? "compra" : "venta"),
   value: "buy",
 });
 const tradeType = Generators.input(tradeTypes);
-const officialRates = {
-  buy: 6.86,
-  sell: 6.96,
-};
 
 const texto_cotizaciones = (cotizacion) => {
   const opciones = {
@@ -97,20 +93,34 @@ const texto_cotizaciones = (cotizacion) => {
   };
   return opciones[cotizacion];
 };
-return {tradeTypes,tradeType,officialRates,texto_cotizaciones};
+return {tradeTypes,tradeType,texto_cotizaciones};
 }});
 
-define({id: "e6aebb7a", inputs: ["d3","tradeType"], outputs: ["github","fileByTradeType","oficial","oficialMap","oficialSeries","oficialDateBisector","officialValueAtOrBefore","data","total_days"], body: async (d3,tradeType) => {
+define({id: "22a86b8b", inputs: ["d3","tradeType"], outputs: ["github","fileByTradeType","oficialCutoff","parseDailyRate","referencialBcb","oficialNuevo","oficial","oficialMap","oficialSeries","oficialDateBisector","officialValueAtOrBefore","officialLabelAtOrBefore","data","total_days"], body: async (d3,tradeType) => {
 const github = "https://raw.githubusercontent.com/mauforonda/dolares/main";
 const fileByTradeType = {
   buy: "compra",
   sell: "venta",
 };
+const oficialCutoff = "2026-06-29";
 
-const oficial = await d3.csv(`${github}/datos/referencial_bcb/${fileByTradeType[tradeType]}.csv`, (d) => ({
+const parseDailyRate = (d) => ({
   timestamp: new Date(d.timestamp + "T00:00-04:00"),
   value: +d.value,
-}));
+});
+
+const referencialBcb = await d3.csv(
+  `${github}/datos/referencial_bcb/${fileByTradeType[tradeType]}.csv`,
+  parseDailyRate
+);
+const oficialNuevo = await d3.csv(
+  `${github}/datos/oficial/${fileByTradeType[tradeType]}.csv`,
+  parseDailyRate
+);
+const oficial = [
+  ...referencialBcb.filter((d) => d.timestamp.toISOString().slice(0, 10) < oficialCutoff),
+  ...oficialNuevo.filter((d) => d.timestamp.toISOString().slice(0, 10) >= oficialCutoff),
+];
 
 const oficialMap = new Map(
   oficial.map((o) => [o.timestamp.toISOString().slice(0, 10), o.value])
@@ -130,6 +140,10 @@ function officialValueAtOrBefore(date) {
   return i >= 0 ? oficialSeries[i].value : undefined;
 }
 
+function officialLabelAtOrBefore(date) {
+  return date < oficialCutoff ? "Referencial" : "Oficial";
+}
+
 let data = await d3.csv(`${github}/datos/binance/${fileByTradeType[tradeType]}.csv`, d3.autoType);
 
 data = data.map((d) => ({
@@ -143,7 +157,7 @@ const total_days = new Set(
     return t.toISOString().slice(0, 10);
   })
 ).size;
-return {github,fileByTradeType,oficial,oficialMap,oficialSeries,oficialDateBisector,officialValueAtOrBefore,data,total_days};
+return {github,fileByTradeType,oficialCutoff,parseDailyRate,referencialBcb,oficialNuevo,oficial,oficialMap,oficialSeries,oficialDateBisector,officialValueAtOrBefore,officialLabelAtOrBefore,data,total_days};
 }});
 
 define({id: "9a9b6d9b", inputs: ["Inputs","stored_time","Generators"], outputs: ["opcionesDias","timeRanges","timeRangeKey"], body: (Inputs,stored_time,Generators) => {
@@ -184,24 +198,15 @@ const observation = Generators.input(plot);
 return {plot,observation};
 }});
 
-define({id: "bef4a977", inputs: ["observation","data","displayObservation","tipo_cotizacion","officialValueAtOrBefore"], outputs: ["selected","plotHeader"], body: (observation,data,displayObservation,tipo_cotizacion,officialValueAtOrBefore) => {
+define({id: "c723f804", inputs: ["observation","data","displayObservation","tipo_cotizacion","officialValueAtOrBefore","officialLabelAtOrBefore"], outputs: ["selected","plotHeader"], body: (observation,data,displayObservation,tipo_cotizacion,officialValueAtOrBefore,officialLabelAtOrBefore) => {
 const selected = observation ? observation : data.slice(-1)[0];
 const plotHeader = displayObservation(
   selected,
   tipo_cotizacion,
-  officialValueAtOrBefore(selected.date)
+  officialValueAtOrBefore(selected.date),
+  officialLabelAtOrBefore(selected.date)
 );
 return {selected,plotHeader};
-}});
-
-define({id: "6842829b", inputs: ["Inputs","htl","Generators"], outputs: ["bolivianosInitiate","bolivianosInput","bolivianos"], body: (Inputs,htl,Generators) => {
-const bolivianosInitiate = Inputs.input(100);
-const bolivianosInput = Inputs.bind(
-  htl.html`<input type=number style="width: 80px;">`,
-  bolivianosInitiate
-);
-const bolivianos = Generators.input(bolivianosInput);
-return {bolivianosInitiate,bolivianosInput,bolivianos};
 }});
 
 define({id: "d81136b0", inputs: ["Event","texto_cotizaciones","htl","selected_cotizacion","input_cotizacion","localStorage"], outputs: ["set","cambio_cotizacion"], body: (Event,texto_cotizaciones,htl,selected_cotizacion,input_cotizacion,localStorage) => {
@@ -258,30 +263,6 @@ texto_cotizaciones(selected_cotizacion)
 ))
 }});
 
-define({id: "02aa75dd", mode: "inline", inputs: ["bolivianosInput","display"], body: async (bolivianosInput,display) => {
-display(await(
-bolivianosInput
-))
-}});
-
-define({id: "03429bbe", mode: "inline", inputs: ["bolivianos","d3","selected","tipo_cotizacion","display"], body: async (bolivianos,d3,selected,tipo_cotizacion,display) => {
-display(await(
- bolivianos ? d3.format(".2f")(bolivianos / selected[tipo_cotizacion]) : "🤷" 
-))
-}});
-
-define({id: "816b3e29", mode: "inline", inputs: ["bolivianos","d3","officialRates","tradeType","display"], body: async (bolivianos,d3,officialRates,tradeType,display) => {
-display(await(
-bolivianos ? d3.format(".2f")(bolivianos / officialRates[tradeType]) : "🤷" 
-))
-}});
-
-define({id: "908537ca", mode: "inline", inputs: ["d3","officialRates","tradeType","selected","tipo_cotizacion","display"], body: async (d3,officialRates,tradeType,selected,tipo_cotizacion,display) => {
-display(await(
-(d3.format(".2%")(1 - (officialRates[tradeType] / selected[tipo_cotizacion])))
-))
-}});
-
 define({id: "81b20b57", mode: "inline", inputs: ["selected","tipo_cotizacion","display"], body: async (selected,tipo_cotizacion,display) => {
 display(await(
 selected[tipo_cotizacion]
@@ -327,17 +308,16 @@ selected.naive ? "y equivale a Bs. " + selected.naive : ""
 </script>
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
-<link rel="stylesheet" href="./_file/style.7dc18801.css">
-<div class="observablehq observablehq--block"><!--:0e160895:--></div>
+<link rel="stylesheet" href="./_file/style.7c2f3fa4.css">
+<div class="observablehq observablehq--block"><!--:b35023de:--></div>
 <div class="observablehq observablehq--block"><!--:1e6bf285:--></div>
-<div class="observablehq observablehq--block"><!--:ef4e770f:--></div>
-<div class="observablehq observablehq--block"><!--:e6aebb7a:--></div>
+<div class="observablehq observablehq--block"><!--:220a931b:--></div>
+<div class="observablehq observablehq--block"><!--:22a86b8b:--></div>
 <div class="observablehq observablehq--block"><!--:9a9b6d9b:--></div>
 <div class="observablehq observablehq--block"><!--:cb49004c:--></div>
 <div class="observablehq observablehq--block"><!--:eecc0d5c:--></div>
 <div class="observablehq observablehq--block"><!--:77b3e1c9:--></div>
-<div class="observablehq observablehq--block"><!--:bef4a977:--></div>
-<div class="observablehq observablehq--block"><!--:6842829b:--></div>
+<div class="observablehq observablehq--block"><!--:c723f804:--></div>
 <div class="observablehq observablehq--block"><!--:d81136b0:--></div>
 <div id="titulo">Dólar en Bolivia</div>
 <div id="opcionesCompraVenta">
@@ -357,32 +337,17 @@ selected.naive ? "y equivale a Bs. " + selected.naive : ""
         </div>
     </div>
 </div>
-<div id="devaluacion">
-    <div>
-        Bs. <observablehq-loading></observablehq-loading><!--:02aa75dd:-->
-        <span> equivalen a </span>
-        <span class="underlined"><observablehq-loading></observablehq-loading><!--:03429bbe:--> Dólares</span>,
-    </div>
-    <div>
-        <span>que al tipo de cambio oficial serían</span>
-        <span class="underlined"><observablehq-loading></observablehq-loading><!--:816b3e29:--> Dólares</span>.
-    </div>
-    <div>
-        <span>Una devaluación del </span>
-        <span class="underlined"><observablehq-loading></observablehq-loading><!--:908537ca:--></span>.
-    </div>
-</div>
 <div id="explicacion">
     <details>
         <summary>¿De dónde salen estos números?</summary>
         <div class="content">
-<p><a href="https://p2p.binance.com/en/trade/all-payments/USDT?fiat=BOB" target="_blank" rel="noopener noreferrer">Binance P2P</a> es un mercado en internet donde la gente puede comprar y vender USDT, una criptomoneda cuya cotización simula el valor del dólar americano. El valor de USDT tiende a subir y bajar junto al valor del dólar en la calle. Cuando alguien quiere vender USDT por bolivianos, ingresa a Binance P2P y publica una oferta, que consiste en una cotización y un monto. Binance P2P lista docenas de ofertas todo el tiempo.</p>
-<p>Sin embargo, este listado no incluye una cotización estimada de mercado o información de qué ofertas se toman efectivamente. Es sólo una lista de ofertas. Entonces ¿de dónde sale que 1 Dólar equivale a <observablehq-loading></observablehq-loading><!--:81b20b57:--> Bolivianos? ¿Cómo consolidar la información de este listado en un sólo valor referencial?</p>
+<p>El Banco Central de Bolivia <a href="https://www.bcb.gob.bo/" target="_blank" rel="noopener noreferrer">publica</a> los tipos de cambio oficial y referencial como promedios ponderados de operaciones cambiarias en entidades financieras para días hábiles.</p>
+<p>El tipo de cambio Binance se construye con las ofertas de USDT en el mercado Binance P2P para USDT por bolivianos. <a href="https://p2p.binance.com/en/trade/all-payments/USDT?fiat=BOB" target="_blank" rel="noopener noreferrer">Binance P2P</a> es un mercado en internet donde la gente puede comprar y vender USDT, una criptomoneda cuya cotización simula el valor del dólar americano. El valor de USDT tiende a subir y bajar junto al valor del dólar en la calle. Cuando alguien quiere vender USDT por bolivianos, ingresa a Binance P2P y publica una oferta, que consiste en una cotización y un monto. Binance P2P lista docenas de ofertas todo el tiempo.</p>
+<p>Sin embargo, este listado no incluye una cotización estimada de mercado o información de qué ofertas se toman efectivamente. Es sólo una lista de ofertas. Entonces ¿de dónde sale que 1 Dólar equivale a <observablehq-loading></observablehq-loading><!--:81b20b57:--> Bolivianos y cómo consolidar la información de este listado en un sólo valor referencial?</p>
 <p>Ofrezco 3 opciones:</p>
 <p>La <observablehq-loading></observablehq-loading><!--:daaa1762:-->, que es una idea simple e intuitiva de la tendencia central en el mercado y equivale a Bs. <observablehq-loading></observablehq-loading><!--:f6967881:-->.</p>
-<p>El <observablehq-loading></observablehq-loading><!--:61e0de14:-->, que sería una estimación más correcta de la tendencia central ponderando cada precio listado por el monto que se ofrece. Es el precio que muestro por defecto <observablehq-loading></observablehq-loading><!--:adb395cc:-->.</p>
+<p>El <observablehq-loading></observablehq-loading><!--:61e0de14:-->, que sería una estimación más correcta de la tendencia central ponderando cada precio listado por el monto que se ofrece <observablehq-loading></observablehq-loading><!--:adb395cc:-->.</p>
 <p>Estas opciones son aproximaciones de la tendencia central en el mercado. Pero alguien que quiera comprar o vender dólares probablemente busca valores más extremos. La tercera opción es el <observablehq-loading></observablehq-loading><!--:ce7c2cb0:-->. Este valor representa la cotización de una oferta que se tomaría fácilmente en el mercado <observablehq-loading></observablehq-loading><!--:05c0d78b:-->.</p>
-<p>Finalmente, el 1 de diciembre de 2025 el Banco Central de Bolivia <a href="https://www.bcb.gob.bo/webdocs/files_noticias/COMUNICADO%20DE%20PRENSA%20BCB_DIC_ok.pdf" target="_blank" rel="noopener noreferrer">comenzó a publicar</a> el <em>valor referencial del dólar estadounidense</em> para compra y venta. El valor de compra representa el promedio ponderado del tipo de cambio en operaciones entre entidades de intermediación financiera y sus clientes mayoristas. Y el valor de venta es el tipo de cambio máximo que estas entidades cobran en operaciones con el exterior. Estos valores se deberían publicar diariamente en la página del Banco Central.</p>
 <p>Puedes utilizar todos estos datos como quieras desde <a href="https://github.com/mauforonda/dolares/" target="_blank" rel="noopener noreferrer">el repositorio</a>, que se actualiza cada 30 minutos, más o menos.</p>
 <p>Por favor sólo utiliza estos números como una referencia.</p>
 </div>

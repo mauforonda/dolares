@@ -47,6 +47,12 @@ body {
   margin: 0 30px;
 }
 
+#grafico svg {
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 #opcionesCompraVenta,
 #opcionesTiempo {
   display: flex;
@@ -234,41 +240,6 @@ body {
   }
 }
 
-#devaluacion {
-  color: var(--base);
-  font-size: 15px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  margin: 2rem 0;
-  gap: 0.8rem;
-
-  div {
-    font-size: 0.8em;
-  }
-
-  input[type="number"] {
-    margin: 0 5px;
-    padding: 5px;
-    text-align: center;
-    background-color: var(--theme-background-a);
-    border-radius: 5px;
-    border: 1px solid var(--base);
-    appearance: textfield;
-  }
-
-  input[type="number"]::-webkit-inner-spin-button,
-  input[type="number"]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-  }
-
-  .underlined {
-    margin: 0 3px;
-    text-decoration: underline 1px dotted var(--figures);
-    text-underline-offset: 5px;
-  }
-}
 
 #explicacion {
   display: grid;
