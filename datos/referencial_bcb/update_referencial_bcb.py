@@ -9,10 +9,11 @@ import unicodedata
 from pathlib import Path
 from numpy import nan
 
-COMPRA_FN_COTIZACION = "buy_oficial.csv"
-COMPRA_FN_COTIZACION_COMPLETO = "buy_oficial_completo.csv"
-COMPRA_FN_MONTO = "buy_oficial_monto.csv"
-VENTA_FN = "sell_oficial.csv"
+DATA_DIR = Path(__file__).parent
+COMPRA_FN_COTIZACION = DATA_DIR / "compra.csv"
+COMPRA_FN_COTIZACION_COMPLETO = DATA_DIR / "compra_completo.csv"
+COMPRA_FN_MONTO = DATA_DIR / "compra_monto.csv"
+VENTA_FN = DATA_DIR / "venta.csv"
 
 
 def normalize(texto, to_float=False):

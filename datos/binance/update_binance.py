@@ -6,12 +6,24 @@ import time
 from urllib import request, error
 import socket
 from datetime import datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 import csv
 
 timezone = "America/La_Paz"
 fiat = "BOB"
 asset = "USDT"
+DATA_DIR = Path(__file__).parent
+FILENAMES = {
+    "BUY": {
+        "prices": "compra.csv",
+        "market": "compra_mercado.csv",
+    },
+    "SELL": {
+        "prices": "venta.csv",
+        "market": "venta_mercado.csv",
+    },
+}
 
 
 def checkPrices(fiat, asset, tradeType, rows=20, max_retries=3, timeout=10):
@@ -141,6 +153,7 @@ def checkPrices(fiat, asset, tradeType, rows=20, max_retries=3, timeout=10):
 
 
 def appendFile(filename, rows):
+    filename = DATA_DIR / filename
     file_exists = True
     try:
         with open(filename, "r") as f:
@@ -171,8 +184,8 @@ for tradeType in ["BUY", "SELL"]:
         start = time.time()
         timestamp = datetime.now(ZoneInfo(timezone)).isoformat(timespec="minutes")
         prices, geek_indicators, outliers = checkPrices(fiat=fiat, asset=asset, tradeType=tradeType)
-        appendPrices(prices, f"{tradeType.lower()}.csv", timestamp)
-        appendPrices(geek_indicators, f"{tradeType.lower()}_extra.csv", timestamp)
+        appendPrices(prices, FILENAMES[tradeType]["prices"], timestamp)
+        appendPrices(geek_indicators, FILENAMES[tradeType]["market"], timestamp)
         if outliers:
             appendOutliers(outliers, "buyside_low_outliers.csv", timestamp)
         print(f"{tradeType}: {time.time() - start:.2f} seconds")

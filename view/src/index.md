@@ -41,8 +41,12 @@ const texto_cotizaciones = (cotizacion) => {
 
 ```js
 const github = "https://raw.githubusercontent.com/mauforonda/dolares/main";
+const fileByTradeType = {
+  buy: "compra",
+  sell: "venta",
+};
 
-const oficial = await d3.csv(`${github}/${tradeType}_oficial.csv`, (d) => ({
+const oficial = await d3.csv(`${github}/datos/referencial_bcb/${fileByTradeType[tradeType]}.csv`, (d) => ({
   timestamp: new Date(d.timestamp + "T00:00-04:00"),
   value: +d.value,
 }));
@@ -65,7 +69,7 @@ function officialValueAtOrBefore(date) {
   return i >= 0 ? oficialSeries[i].value : undefined;
 }
 
-let data = await d3.csv(`${github}/${tradeType}.csv`, d3.autoType);
+let data = await d3.csv(`${github}/datos/binance/${fileByTradeType[tradeType]}.csv`, d3.autoType);
 
 data = data.map((d) => ({
   ...d,

@@ -3,6 +3,10 @@ on:
   schedule:
     - cron: '0,30 * * * *'
   workflow_dispatch:
+
+permissions:
+  contents: write
+
 jobs:
   update:
     name: check, update and commit
@@ -16,10 +20,16 @@ jobs:
           python-version: '3.12'
       - name: Update
         run: |
-         ./update.py
+          ./datos/binance/update_binance.py
+      - name: Sync legacy CSV paths
+        run: |
+          cp datos/binance/compra.csv buy.csv
+          cp datos/binance/venta.csv sell.csv
+          cp datos/binance/compra_mercado.csv buy_extra.csv
+          cp datos/binance/venta_mercado.csv sell_extra.csv
       - name: Commit
         run: |
           git config --global user.email "dolares-bot@example.com"
           git config --global user.name "dolares-bot"
           git add -A
-          git diff --quiet && git diff --staged --quiet || (git commit -m "[ci] update"; git push -q "https://$GH_TOKEN@github.com/mauforonda/dolares.git" main)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "[ci] update"; git push -q origin main)
