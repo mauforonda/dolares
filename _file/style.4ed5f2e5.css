@@ -6,7 +6,7 @@
   --basefaint: #95a2b083;
   --background: #eff4f4;
   --figures: #34a853;
-  --oficial: #4da4c4ff;
+  --oficial: rgb(34, 101, 215);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -51,6 +51,10 @@ body {
   touch-action: pan-y;
   user-select: none;
   -webkit-user-select: none;
+}
+
+#grafico svg[data-selection="active"] .initial-selection {
+  display: none;
 }
 
 #opcionesCompraVenta,
@@ -197,13 +201,14 @@ body {
         font-size: 0.7em;
       }
       .fuente {
-        opacity: 0.7;
+        opacity: 0.9;
       }
     }
 
     .limit {
       margin: 0 15px;
       min-width: 28px;
+      opacity: 0.5;
     }
   }
 
