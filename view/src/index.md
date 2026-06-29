@@ -42,6 +42,11 @@ const fileByTradeType = {
   sell: "venta",
 };
 const oficialCutoff = "2026-06-29";
+const oficialColors = {
+  referencial: "#4da4c4ff",
+  oficial: "rgb(34, 101, 215)",
+};
+const binanceColor = "#34A853";
 
 const parseDailyRate = (d) => ({
   timestamp: new Date(d.timestamp + "T00:00-04:00"),
@@ -57,8 +62,12 @@ const oficialNuevo = await d3.csv(
   parseDailyRate
 );
 const oficial = [
-  ...referencialBcb.filter((d) => d.timestamp.toISOString().slice(0, 10) < oficialCutoff),
-  ...oficialNuevo.filter((d) => d.timestamp.toISOString().slice(0, 10) >= oficialCutoff),
+  ...referencialBcb
+    .filter((d) => d.timestamp.toISOString().slice(0, 10) < oficialCutoff)
+    .map((d) => ({ ...d, fuente: "referencial" })),
+  ...oficialNuevo
+    .filter((d) => d.timestamp.toISOString().slice(0, 10) >= oficialCutoff)
+    .map((d) => ({ ...d, fuente: "oficial" })),
 ];
 
 const oficialMap = new Map(
@@ -81,6 +90,10 @@ function officialValueAtOrBefore(date) {
 
 function officialLabelAtOrBefore(date) {
   return date < oficialCutoff ? "Referencial" : "Oficial";
+}
+
+function officialColorAtOrBefore(date) {
+  return date < oficialCutoff ? oficialColors.referencial : oficialColors.oficial;
 }
 
 let data = await d3.csv(`${github}/datos/binance/${fileByTradeType[tradeType]}.csv`, d3.autoType);
@@ -138,7 +151,9 @@ const plotHeader = displayObservation(
   selected,
   tipo_cotizacion,
   officialValueAtOrBefore(selected.date),
-  officialLabelAtOrBefore(selected.date)
+  officialLabelAtOrBefore(selected.date),
+  officialColorAtOrBefore(selected.date),
+  binanceColor
 );
 ```
 

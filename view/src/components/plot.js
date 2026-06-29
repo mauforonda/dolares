@@ -47,11 +47,11 @@ function withGradient({ color, id = "gradient" }, callback) {
   ];
 }
 
-function withPattern({ color, opacity = 0.7, id = "gradient" }, callback) {
+function withPatternReferencial({ color, opacity = 0.7 }, callback) {
   return [
-    callback(`url(#${id})`),
+    callback("url(#pattern_referencial)"),
     () => svg`<defs>
-    <pattern id="${id}" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse" patternTransform="translate(-79.53 183.07)">
+    <pattern id="pattern_referencial" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse" patternTransform="translate(-79.53 183.07)">
       <rect fill="none" width="100" height="100"/>
       <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="53.03" y1="-53.03" x2="-53.03" y2="53.03"/>
       <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="58.59" y1="-47.48" x2="-47.48" y2="58.59"/>
@@ -71,6 +71,53 @@ function withPattern({ color, opacity = 0.7, id = "gradient" }, callback) {
       <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="136.37" y1="30.3" x2="30.3" y2="136.37"/>
       <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="141.92" y1="35.86" x2="35.86" y2="141.92"/>
       <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="147.48" y1="41.41" x2="41.41" y2="147.48"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="153.03" y1="46.97" x2="46.97" y2="153.03"/>
+    </pattern>`,
+  ];
+}
+
+function withPatternOficial({ color, opacity = 0.7 }, callback) {
+  return [
+    callback("url(#pattern_oficial)"),
+    () => svg`<defs>
+    <pattern id="pattern_oficial" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse" patternTransform="translate(-79.53 183.07)">
+      <rect fill="none" width="100" height="100"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="53.03" y1="-53.03" x2="-53.03" y2="53.03"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="55.81" y1="-50.25" x2="-50.25" y2="55.81"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="58.59" y1="-47.48" x2="-47.48" y2="58.59"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="61.37" y1="-44.7" x2="-44.7" y2="61.37"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="64.14" y1="-41.92" x2="-41.92" y2="64.14"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="66.92" y1="-39.14" x2="-39.14" y2="66.92"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="69.7" y1="-36.37" x2="-36.37" y2="69.7"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="72.48" y1="-33.59" x2="-33.59" y2="72.48"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="75.26" y1="-30.81" x2="-30.81" y2="75.26"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="78.03" y1="-28.03" x2="-28.03" y2="78.03"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="80.81" y1="-25.26" x2="-25.26" y2="80.81"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="83.59" y1="-22.48" x2="-22.48" y2="83.59"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="86.37" y1="-19.7" x2="-19.7" y2="86.37"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="89.14" y1="-16.92" x2="-16.92" y2="89.14"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="91.92" y1="-14.14" x2="-14.14" y2="91.92"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="94.7" y1="-11.37" x2="-11.37" y2="94.7"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="97.48" y1="-8.59" x2="-8.59" y2="97.48"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="100.25" y1="-5.81" x2="-5.81" y2="100.25"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="103.03" y1="-3.03" x2="-3.03" y2="103.03"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="105.81" y1="-0.25" x2="-0.25" y2="105.81"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="108.59" y1="2.52" x2="2.52" y2="108.59"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="111.37" y1="5.3" x2="5.3" y2="111.37"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="114.14" y1="8.08" x2="8.08" y2="114.14"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="116.92" y1="10.86" x2="10.86" y2="116.92"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="119.7" y1="13.63" x2="13.63" y2="119.7"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="122.48" y1="16.41" x2="16.41" y2="122.48"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="125.26" y1="19.19" x2="19.19" y2="125.26"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="128.03" y1="21.97" x2="21.97" y2="128.03"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="130.81" y1="24.74" x2="24.74" y2="130.81"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="133.59" y1="27.52" x2="27.52" y2="133.59"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="136.37" y1="30.3" x2="30.3" y2="136.37"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="139.14" y1="33.08" x2="33.08" y2="139.14"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="141.92" y1="35.86" x2="35.86" y2="141.92"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="144.7" y1="38.63" x2="38.63" y2="144.7"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="147.48" y1="41.41" x2="41.41" y2="147.48"/>
+      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="150.25" y1="44.19" x2="44.19" y2="150.25"/>
       <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="153.03" y1="46.97" x2="46.97" y2="153.03"/>
     </pattern>`,
   ];
@@ -97,6 +144,7 @@ export function drawPlot(data, oficial, width, campo_precio, dias, dark) {
         timestamp: ultimo_oficial.fin,
         value: ultimo_oficial.value,
         fin: ultimo_oficial.fin,
+        fuente: ultimo_oficial.fuente,
       },
     ],
   ];
@@ -112,8 +160,11 @@ export function drawPlot(data, oficial, width, campo_precio, dias, dark) {
     base: dark ? "#d7e7f7" : "#4f6882",
     background: "#eff4f4",
     figures: "#34A853",
+    referencial: "#4da4c4ff",
     oficial: "rgb(34, 101, 215)",
   };
+  const colorOficial = (d) =>
+    d.fuente === "oficial" ? colors.oficial : colors.referencial;
 
   const [min, max] = [
     ...data.map((d) => d[campo_precio]),
@@ -154,6 +205,18 @@ export function drawPlot(data, oficial, width, campo_precio, dias, dark) {
     x: "timestamp",
     y: "value",
   };
+  const referencial = oficial.filter((d) => d.fuente === "referencial");
+  const oficialNuevo = oficial.filter((d) => d.fuente === "oficial");
+  const ultimoReferencial = referencial.slice(-1)[0];
+  const primerOficial = oficialNuevo[0];
+  const lineaReferencial = primerOficial
+    ? [
+        ...referencial,
+        { ...ultimoReferencial, timestamp: primerOficial.timestamp },
+        primerOficial,
+      ]
+    : oficial;
+  const lineaOficial = oficialNuevo;
   let oficialIndex = 0;
   const oficialPointer = data.flatMap((d) => {
     while (
@@ -163,11 +226,19 @@ export function drawPlot(data, oficial, width, campo_precio, dias, dark) {
       oficialIndex++;
     }
     return oficial[oficialIndex]?.timestamp <= d.timestamp
-      ? [{ ...d, value: oficial[oficialIndex].value }]
+      ? [
+          {
+            ...d,
+            value: oficial[oficialIndex].value,
+            fuente: oficial[oficialIndex].fuente,
+          },
+        ]
       : [];
   });
+  const ultimo = data.slice(-1);
+  const ultimoOficial = oficialPointer.slice(-1);
 
-  return Plot.plot({
+  const plot = Plot.plot({
     height: 550,
     marginTop: 20,
     marginLeft: 5,
@@ -202,17 +273,35 @@ export function drawPlot(data, oficial, width, campo_precio, dias, dark) {
         strokeOpacity: 1,
         strokeWidth: 0.3,
       }),
-      withPattern(
-        { color: colors.oficial, opacity: 0.3, id: "gradient_oficial" },
+      withPatternReferencial(
+        { color: colors.referencial, opacity: 0.3 },
         (fill) =>
-          Plot.rectY(oficial, {
+          Plot.rectY(referencial, {
             x1: "timestamp",
             x2: "fin",
             y: "value",
             fill,
           })
       ),
-      Plot.line(oficial, {
+      withPatternOficial(
+        { color: colors.oficial, opacity: 0.3 },
+        (fill) =>
+          Plot.rectY(oficialNuevo, {
+            x1: "timestamp",
+            x2: "fin",
+            y: "value",
+            fill,
+          })
+      ),
+      Plot.line(lineaReferencial, {
+        ...dotOficial,
+        curve: "step-after",
+        stroke: colors.referencial,
+        strokeWidth: 2,
+        strokeOpacity: 0.4,
+        sort: "timestamp",
+      }),
+      Plot.line(lineaOficial, {
         ...dotOficial,
         curve: "step-after",
         stroke: colors.oficial,
@@ -220,14 +309,24 @@ export function drawPlot(data, oficial, width, campo_precio, dias, dark) {
         strokeOpacity: 0.4,
         sort: "timestamp",
       }),
+      Plot.dot(ultimoOficial, {
+        ...dotOficial,
+        className: "initial-selection",
+        r: 4,
+        fill: colorOficial,
+        fillOpacity: 1,
+        stroke: colorOficial,
+        strokeWidth: 10,
+        strokeOpacity: 0.2,
+      }),
       Plot.dot(
         oficialPointer,
         Plot.pointerX({
           ...dotOficial,
           r: 4,
-          fill: colors.oficial,
+          fill: colorOficial,
           fillOpacity: 1,
-          stroke: colors.oficial,
+          stroke: colorOficial,
           strokeWidth: 10,
           strokeOpacity: 0.2,
         })
@@ -245,6 +344,16 @@ export function drawPlot(data, oficial, width, campo_precio, dias, dark) {
         stroke: colors.figures,
         strokeWidth: 0.8,
         sort: "timestamp",
+      }),
+      Plot.dot(ultimo, {
+        ...dotMedian,
+        className: "initial-selection",
+        r: 4,
+        fill: colors.figures,
+        fillOpacity: 1,
+        stroke: colors.figures,
+        strokeWidth: 10,
+        strokeOpacity: 0.2,
       }),
       Plot.dot(
         data,
@@ -269,15 +378,48 @@ export function drawPlot(data, oficial, width, campo_precio, dias, dark) {
           strokeDasharray: 2,
         })
       ),
+      Plot.ruleX(ultimo, {
+        className: "initial-selection",
+        x: "timestamp",
+        y1: "low",
+        y2: "high",
+        strokeWidth: 0.5,
+        strokeOpacity: 0.9,
+        strokeDasharray: 2,
+      }),
     ],
   });
+  const activateSelection = () => {
+    plot.dataset.selection = "active";
+  };
+  const clearSelection = () => {
+    delete plot.dataset.selection;
+  };
+  const syncSelection = () => {
+    requestAnimationFrame(() => {
+      if (plot.value) {
+        activateSelection();
+      } else {
+        clearSelection();
+      }
+    });
+  };
+  plot.addEventListener("pointerdown", activateSelection, { passive: true });
+  plot.addEventListener("pointermove", activateSelection, { passive: true });
+  plot.addEventListener("input", syncSelection);
+  plot.addEventListener("pointerleave", syncSelection, { passive: true });
+  plot.addEventListener("pointercancel", syncSelection, { passive: true });
+  plot.addEventListener("pointerup", syncSelection, { passive: true });
+  return plot;
 }
 
 export function displayObservation(
   observation,
   campo_precio,
   precio_oficial,
-  etiqueta_oficial
+  etiqueta_oficial,
+  color_oficial,
+  color_binance
 ) {
   const numberFormat = format(".2f");
   const timeFormat = Intl.DateTimeFormat("es-BO", {
@@ -297,19 +439,23 @@ export function displayObservation(
       <div class="mid">
         <div class="varieties">
           <div class="variety">
-            <div class="annotation fuente">Binance</div>
+            <div class="annotation fuente" style=${{ color: color_oficial }}>
+              ${etiqueta_oficial}
+            </div>
             <div class="midValue">
-              <div class="value">
-                ${numberFormat(observation[campo_precio])}
+              <div class="value oficial" style=${{ color: color_oficial }}>
+                ${precio_oficial ? numberFormat(precio_oficial) : "~"}
               </div>
             </div>
           </div>
 
           <div class="variety">
-            <div class="annotation fuente">${etiqueta_oficial}</div>
+            <div class="annotation fuente" style=${{ color: color_binance }}>
+              Binance
+            </div>
             <div class="midValue">
-              <div class="value oficial">
-                ${precio_oficial ? numberFormat(precio_oficial) : "~"}
+              <div class="value">
+                ${numberFormat(observation[campo_precio])}
               </div>
             </div>
           </div>
