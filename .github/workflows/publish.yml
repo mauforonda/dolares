@@ -1,4 +1,4 @@
-name: Publish
+name: Publicar página
 on:
   workflow_dispatch:
 

@@ -1,7 +1,8 @@
-name: Update
+name: Actualizar tipo oficial
+
 on:
   schedule:
-    - cron: '0,30 * * * *'
+    - cron: '0 0-5 * * 2-6'
   workflow_dispatch:
 
 permissions:
@@ -14,22 +15,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Setup python
+      - name: setup python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Update
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Python
         run: |
-          ./datos/binance/update_binance.py
-      - name: Sync legacy CSV paths
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Actualizar
         run: |
-          cp datos/binance/compra.csv buy.csv
-          cp datos/binance/venta.csv sell.csv
-          cp datos/binance/compra_mercado.csv buy_extra.csv
-          cp datos/binance/venta_mercado.csv sell_extra.csv
+          ./datos/oficial/update_oficial.py
       - name: Commit
         run: |
           git config --global user.email "dolares-bot@example.com"
           git config --global user.name "dolares-bot"
           git add -A
-          git diff --quiet && git diff --staged --quiet || (git commit -m "[ci] update"; git push -q origin main)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "[ci] update oficial"; git push -q origin main)
