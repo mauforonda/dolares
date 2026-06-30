@@ -1,7 +1,9 @@
 import * as Plot from "../../_npm/@observablehq/plot@0.6.17/_esm.js";
 
 import { html, svg } from "../../_npm/htl@1.0.0/_esm.js";
-import { format } from "../../_npm/d3@7.9.0/_esm.js";
+import { curveBasis, curveStepBefore, format, line } from "../../_npm/d3@7.9.0/_esm.js";
+
+import { getPalette, sourceColor } from "./colors.b8607fe9.js";
 
 const timeTickFormat = () => {
   const seenYears = new Set();
@@ -47,40 +49,11 @@ function withGradient({ color, id = "gradient" }, callback) {
   ];
 }
 
-function withPatternReferencial({ color, opacity = 0.7 }, callback) {
+function withPattern({ color, id, opacity = 0.7 }, callback) {
   return [
-    callback("url(#pattern_referencial)"),
+    callback(`url(#${id})`),
     () => svg`<defs>
-    <pattern id="pattern_referencial" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse" patternTransform="translate(-79.53 183.07)">
-      <rect fill="none" width="100" height="100"/>
-      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="53.03" y1="-53.03" x2="-53.03" y2="53.03"/>
-      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="58.59" y1="-47.48" x2="-47.48" y2="58.59"/>
-      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="64.14" y1="-41.92" x2="-41.92" y2="64.14"/>
-      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="69.7" y1="-36.37" x2="-36.37" y2="69.7"/>
-      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="75.26" y1="-30.81" x2="-30.81" y2="75.26"/>
-      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="80.81" y1="-25.26" x2="-25.26" y2="80.81"/>
-      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="86.37" y1="-19.7" x2="-19.7" y2="86.37"/>
-      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="91.92" y1="-14.14" x2="-14.14" y2="91.92"/>
-      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="97.48" y1="-8.59" x2="-8.59" y2="97.48"/>
-      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="103.03" y1="-3.03" x2="-3.03" y2="103.03"/>
-      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="108.59" y1="2.52" x2="2.52" y2="108.59"/>
-      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="114.14" y1="8.08" x2="8.08" y2="114.14"/>
-      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="119.7" y1="13.63" x2="13.63" y2="119.7"/>
-      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="125.26" y1="19.19" x2="19.19" y2="125.26"/>
-      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="130.81" y1="24.74" x2="24.74" y2="130.81"/>
-      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="136.37" y1="30.3" x2="30.3" y2="136.37"/>
-      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="141.92" y1="35.86" x2="35.86" y2="141.92"/>
-      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="147.48" y1="41.41" x2="41.41" y2="147.48"/>
-      <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="153.03" y1="46.97" x2="46.97" y2="153.03"/>
-    </pattern>`,
-  ];
-}
-
-function withPatternOficial({ color, opacity = 0.7 }, callback) {
-  return [
-    callback("url(#pattern_oficial)"),
-    () => svg`<defs>
-    <pattern id="pattern_oficial" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse" patternTransform="translate(-79.53 183.07)">
+    <pattern id="${id}" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse" patternTransform="translate(-79.53 183.07)">
       <rect fill="none" width="100" height="100"/>
       <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="53.03" y1="-53.03" x2="-53.03" y2="53.03"/>
       <line style="stroke:${color};stroke-miterlimit:10;stroke-width:1px;stroke-opacity:${opacity};fill:none" x1="55.81" y1="-50.25" x2="-50.25" y2="55.81"/>
@@ -123,6 +96,69 @@ function withPatternOficial({ color, opacity = 0.7 }, callback) {
   ];
 }
 
+class DifferenceArea extends Plot.Mark {
+  constructor(data, { x, y1, y2, fill, fillOpacity = 1 } = {}) {
+    super(
+      data,
+      {
+        x: { value: x, scale: "x" },
+        y1: { value: y1, scale: "y" },
+        y2: { value: y2, scale: "y" },
+      },
+      {},
+      { ariaLabel: "difference-area" },
+    );
+    this.fill = fill;
+    this.fillOpacity = fillOpacity;
+  }
+
+  render(index, scales, channels, dimensions, context) {
+    const X = channels.x.value ?? channels.x;
+    const Y1 = channels.y1.value ?? channels.y1;
+    const Y2 = channels.y2.value ?? channels.y2;
+    const x = (i) => (Number.isFinite(X[i]) ? X[i] : scales.x(X[i]));
+    const y1 = (i) => (Number.isFinite(Y1[i]) ? Y1[i] : scales.y(Y1[i]));
+    const y2 = (i) => (Number.isFinite(Y2[i]) ? Y2[i] : scales.y(Y2[i]));
+    const facets = typeof index[0] === "number" ? [index] : index;
+    const group = context.document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "g",
+    );
+    group.setAttribute("aria-label", "difference-area");
+
+    for (const facet of facets) {
+      const points = Array.from(facet)
+        .filter(
+          (i) =>
+            X[i] != null &&
+            Number.isFinite(y1(i)) &&
+            Number.isFinite(y2(i)),
+        )
+        .sort((a, b) => X[a] - X[b]);
+      if (points.length < 2) continue;
+
+      const binance = line().curve(curveBasis).x(x).y(y1)(points);
+      const oficial = line()
+        .curve(curveStepBefore)
+        .x(x)
+        .y(y2)(points.slice().reverse());
+      if (!binance || !oficial) continue;
+
+      const path = context.document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "path",
+      );
+      path.setAttribute("d", `${binance}${oficial.replace(/^M/, "L")}Z`);
+      path.setAttribute("fill", this.fill);
+      path.setAttribute("fill-opacity", this.fillOpacity);
+      path.setAttribute("stroke", "none");
+      group.appendChild(path);
+    }
+
+    return group.childNodes.length ? group : null;
+  }
+}
+
 export function drawPlot(data, oficial, width, campo_precio, dias, dark) {
   const ahora = new Date();
   const desde = new Date(ahora - dias * 86400000);
@@ -149,29 +185,22 @@ export function drawPlot(data, oficial, width, campo_precio, dias, dark) {
     ],
   ];
 
-  console.log(dias)
+  console.log(dias);
 
   const hours =
     (data.slice(-1)[0].timestamp - data[0].timestamp) / (1000 * 60 * 60);
   const days = hours / 24;
   const hoursFit = width / hours > 3;
 
-  const colors = {
-    base: dark ? "#d7e7f7" : "#4f6882",
-    background: "#eff4f4",
-    figures: "#34A853",
-    referencial: "#4da4c4ff",
-    oficial: "rgb(34, 101, 215)",
-  };
-  const colorOficial = (d) =>
-    d.fuente === "oficial" ? colors.oficial : colors.referencial;
+  const colors = getPalette(dark);
+  const colorOficial = (d) => sourceColor(colors, d.fuente);
 
   const [min, max] = [
     ...data.map((d) => d[campo_precio]),
     ...oficial_corto.map((d) => d.value),
   ].reduce(
     ([min, max], d) => [Math.min(min, d), Math.max(max, d)],
-    [Infinity, -Infinity]
+    [Infinity, -Infinity],
   );
 
   const yDomain = [min * 0.97, max * 1.03];
@@ -205,18 +234,6 @@ export function drawPlot(data, oficial, width, campo_precio, dias, dark) {
     x: "timestamp",
     y: "value",
   };
-  const referencial = oficial.filter((d) => d.fuente === "referencial");
-  const oficialNuevo = oficial.filter((d) => d.fuente === "oficial");
-  const ultimoReferencial = referencial.slice(-1)[0];
-  const primerOficial = oficialNuevo[0];
-  const lineaReferencial = primerOficial
-    ? [
-        ...referencial,
-        { ...ultimoReferencial, timestamp: primerOficial.timestamp },
-        primerOficial,
-      ]
-    : oficial;
-  const lineaOficial = oficialNuevo;
   let oficialIndex = 0;
   const oficialPointer = data.flatMap((d) => {
     while (
@@ -231,10 +248,43 @@ export function drawPlot(data, oficial, width, campo_precio, dias, dark) {
             ...d,
             value: oficial[oficialIndex].value,
             fuente: oficial[oficialIndex].fuente,
+            binance: d[campo_precio],
           },
         ]
       : [];
   });
+  const oficialAlineado = oficialPointer.map((d, i) => ({
+    ...d,
+    fin: oficialPointer[i + 1]?.timestamp ?? ahora,
+  }));
+  const oficialTramos = [];
+  for (const d of oficialAlineado) {
+    const ultimo = oficialTramos.at(-1);
+    if (ultimo && ultimo.fuente === d.fuente && ultimo.value === d.value) {
+      ultimo.fin = d.fin;
+    } else {
+      oficialTramos.push({ ...d });
+    }
+  }
+  const referencial = oficialTramos.filter((d) => d.fuente === "referencial");
+  const oficialNuevo = oficialTramos.filter((d) => d.fuente === "oficial");
+  const ultimoReferencial = referencial.slice(-1)[0];
+  const primerOficial = oficialNuevo[0];
+  const lineaReferencial =
+    ultimoReferencial && primerOficial
+      ? [
+          ...referencial,
+          { ...ultimoReferencial, timestamp: primerOficial.timestamp },
+          primerOficial,
+        ]
+      : referencial;
+  const lineaOficial =
+    oficialNuevo.length > 0
+      ? [
+          ...oficialNuevo,
+          { ...oficialNuevo.at(-1), timestamp: oficialNuevo.at(-1).fin },
+        ]
+      : oficialNuevo;
   const ultimo = data.slice(-1);
   const ultimoOficial = oficialPointer.slice(-1);
 
@@ -273,32 +323,50 @@ export function drawPlot(data, oficial, width, campo_precio, dias, dark) {
         strokeOpacity: 1,
         strokeWidth: 0.3,
       }),
-      withPatternReferencial(
-        { color: colors.referencial, opacity: 0.3 },
+      new DifferenceArea(oficialPointer, {
+        x: "timestamp",
+        y1: "binance",
+        y2: "value",
+        fill: colors.alerta,
+        fillOpacity: 0.1,
+      }),
+      withPattern(
+        { color: colors.referencial, id: "pattern-referencial", opacity: 0.3 },
         (fill) =>
           Plot.rectY(referencial, {
             x1: "timestamp",
             x2: "fin",
             y: "value",
             fill,
-          })
+          }),
       ),
-      withPatternOficial(
-        { color: colors.oficial, opacity: 0.3 },
+      withPattern(
+        { color: colors.oficial, id: "pattern-oficial", opacity: 0.5 },
         (fill) =>
           Plot.rectY(oficialNuevo, {
             x1: "timestamp",
             x2: "fin",
             y: "value",
             fill,
-          })
+          }),
+      ),
+      Plot.ruleX(
+        oficialPointer,
+        Plot.pointerX({
+          x: "timestamp",
+          y1: "binance",
+          y2: "value",
+          stroke: colors.alerta,
+          strokeWidth: 2,
+          strokeOpacity: d => Math.abs(d.value - d.binance),
+        }),
       ),
       Plot.line(lineaReferencial, {
         ...dotOficial,
         curve: "step-after",
         stroke: colors.referencial,
-        strokeWidth: 2,
-        strokeOpacity: 0.4,
+        strokeWidth: 1.5,
+        strokeOpacity: 0.7,
         sort: "timestamp",
       }),
       Plot.line(lineaOficial, {
@@ -306,7 +374,7 @@ export function drawPlot(data, oficial, width, campo_precio, dias, dark) {
         curve: "step-after",
         stroke: colors.oficial,
         strokeWidth: 2,
-        strokeOpacity: 0.4,
+        strokeOpacity: 0.7,
         sort: "timestamp",
       }),
       Plot.dot(ultimoOficial, {
@@ -329,20 +397,20 @@ export function drawPlot(data, oficial, width, campo_precio, dias, dark) {
           stroke: colorOficial,
           strokeWidth: 10,
           strokeOpacity: 0.2,
-        })
+        }),
       ),
       withGradient({ color: colors.figures }, (fill) =>
         Plot.areaY(data, {
           ...dotMedian,
           fill,
           curve: "basis",
-        })
+        }),
       ),
       Plot.line(data, {
         ...dotMedian,
         curve: "basis",
         stroke: colors.figures,
-        strokeWidth: 0.8,
+        strokeWidth: 1,
         sort: "timestamp",
       }),
       Plot.dot(ultimo, {
@@ -365,28 +433,8 @@ export function drawPlot(data, oficial, width, campo_precio, dias, dark) {
           stroke: colors.figures,
           strokeWidth: 10,
           strokeOpacity: 0.2,
-        })
+        }),
       ),
-      Plot.ruleX(
-        data,
-        Plot.pointerX({
-          x: "timestamp",
-          y1: "low",
-          y2: "high",
-          strokeWidth: 0.5,
-          strokeOpacity: 0.9,
-          strokeDasharray: 2,
-        })
-      ),
-      Plot.ruleX(ultimo, {
-        className: "initial-selection",
-        x: "timestamp",
-        y1: "low",
-        y2: "high",
-        strokeWidth: 0.5,
-        strokeOpacity: 0.9,
-        strokeDasharray: 2,
-      }),
     ],
   });
   const activateSelection = () => {
@@ -419,7 +467,7 @@ export function displayObservation(
   precio_oficial,
   etiqueta_oficial,
   color_oficial,
-  color_binance
+  color_binance,
 ) {
   const numberFormat = format(".2f");
   const timeFormat = Intl.DateTimeFormat("es-BO", {
@@ -432,10 +480,6 @@ export function displayObservation(
   });
   return html`<div class="observation">
     <div class="price">
-      <div class="limit">
-        <div>${numberFormat(observation.low)}</div>
-        <div class="annotation">desde</div>
-      </div>
       <div class="mid">
         <div class="varieties">
           <div class="variety">
@@ -461,10 +505,6 @@ export function displayObservation(
           </div>
         </div>
         <div class="annotation">Bs. por 1 Dólar</div>
-      </div>
-      <div class="limit">
-        <div>${numberFormat(observation.high)}</div>
-        <div class="annotation">hasta</div>
       </div>
     </div>
     <div class="date">${timeFormat.format(observation.timestamp)}</div>

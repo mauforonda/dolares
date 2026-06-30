@@ -1,24 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,100..900;1,100..900&family=Playfair+Display:wght@400;500&display=swap");
 
-:root {
-  --base: #2f4155;
-  --baselight: #4f6882;
-  --basefaint: #95a2b083;
-  --background: #eff4f4;
-  --figures: #34a853;
-  --oficial: rgb(34, 101, 215);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --base: #d7e7f7;
-    --baselight: #afb8c1;
-    --basefaint: #808991;
-    --background: #22262b;
-  }
-}
-
-
 #observablehq-center {
   margin: 0;
 }
@@ -145,8 +126,7 @@ body {
 
     .mid,
     .varieties,
-    .variety,
-    .limit {
+    .variety {
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -154,7 +134,6 @@ body {
     }
 
     .currency,
-    .limit,
     .annotation {
       font-size: 0.8em;
     }
@@ -205,11 +184,6 @@ body {
       }
     }
 
-    .limit {
-      margin: 0 15px;
-      min-width: 28px;
-      opacity: 0.5;
-    }
   }
 
   .date {
@@ -265,7 +239,7 @@ body {
     summary {
       background-color: var(--theme-background-a);
       padding: 10px;
-      font-style: italic;
+      /* font-style: italic; */
       cursor: pointer;
       text-align: center;
       list-style: none;
@@ -306,7 +280,7 @@ body {
 
   #cotizacionSeleccionada {
     padding: 15px 0 5px 0;
-    color: var(--baselight);
+    /* color: var(--baselight); */
     font-size: 0.8em;
     margin: 10px 0 0 0;
     text-align: center;

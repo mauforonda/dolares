@@ -12,7 +12,8 @@
 <link rel="modulepreload" href="./_observablehq/client.js">
 <link rel="modulepreload" href="./_observablehq/runtime.js">
 <link rel="modulepreload" href="./_observablehq/stdlib.js">
-<link rel="modulepreload" href="./_import/components/plot.acd08893.js">
+<link rel="modulepreload" href="./_import/components/plot.0ca9f695.js">
+<link rel="modulepreload" href="./_import/components/colors.b8607fe9.js">
 <link rel="modulepreload" href="./_npm/@observablehq/plot@0.6.17/_esm.js">
 <link rel="modulepreload" href="./_npm/htl@1.0.0/_esm.js">
 <link rel="modulepreload" href="./_npm/d3@7.9.0/_esm.js">
@@ -58,8 +59,10 @@
 
 import {define} from "./_observablehq/client.js";
 
-define({id: "b35023de", inputs: ["localStorage","Inputs","Generators"], outputs: ["drawPlot","displayObservation","default_cotizacion","stored_cotizacion","selected_cotizacion","input_cotizacion","tipo_cotizacion"], body: async (localStorage,Inputs,Generators) => {
-const {drawPlot, displayObservation} = await import("./_import/components/plot.acd08893.js");
+define({id: "ce8b26da", inputs: ["display","localStorage","Inputs","Generators"], outputs: ["drawPlot","displayObservation","paletteStyle","sourceColorVariable","default_cotizacion","stored_cotizacion","selected_cotizacion","input_cotizacion","tipo_cotizacion"], body: async (display,localStorage,Inputs,Generators) => {
+const [{drawPlot, displayObservation}, {paletteStyle, sourceColorVariable}] = await Promise.all([import("./_import/components/plot.0ca9f695.js"), import("./_import/components/colors.b8607fe9.js")]);
+
+display(paletteStyle);
 
 const default_cotizacion = "naive";
 const stored_cotizacion = localStorage.getItem("tipo-cotizacion");
@@ -69,7 +72,7 @@ const selected_cotizacion = stored_cotizacion
 
 const input_cotizacion = Inputs.input(selected_cotizacion);
 const tipo_cotizacion = Generators.input(input_cotizacion);
-return {drawPlot,displayObservation,default_cotizacion,stored_cotizacion,selected_cotizacion,input_cotizacion,tipo_cotizacion};
+return {drawPlot,displayObservation,paletteStyle,sourceColorVariable,default_cotizacion,stored_cotizacion,selected_cotizacion,input_cotizacion,tipo_cotizacion};
 }});
 
 define({id: "1e6bf285", inputs: ["localStorage"], outputs: ["default_time","stored_time"], body: (localStorage) => {
@@ -96,18 +99,13 @@ const texto_cotizaciones = (cotizacion) => {
 return {tradeTypes,tradeType,texto_cotizaciones};
 }});
 
-define({id: "fe90ac27", inputs: ["d3","tradeType"], outputs: ["github","fileByTradeType","oficialCutoff","oficialColors","binanceColor","parseDailyRate","referencialBcb","oficialNuevo","oficial","oficialMap","oficialSeries","oficialDateBisector","officialValueAtOrBefore","officialLabelAtOrBefore","officialColorAtOrBefore","data","total_days"], body: async (d3,tradeType) => {
+define({id: "c96e730b", inputs: ["d3","tradeType"], outputs: ["github","fileByTradeType","oficialCutoff","parseDailyRate","referencialBcb","oficialNuevo","oficial","oficialMap","oficialSeries","oficialDateBisector","officialValueAtOrBefore","officialLabelAtOrBefore","officialSourceAtOrBefore","data","total_days"], body: async (d3,tradeType) => {
 const github = "https://raw.githubusercontent.com/mauforonda/dolares/main";
 const fileByTradeType = {
   buy: "compra",
   sell: "venta",
 };
 const oficialCutoff = "2026-06-29";
-const oficialColors = {
-  referencial: "#4da4c4ff",
-  oficial: "rgb(34, 101, 215)",
-};
-const binanceColor = "#34A853";
 
 const parseDailyRate = (d) => ({
   timestamp: new Date(d.timestamp + "T00:00-04:00"),
@@ -153,8 +151,8 @@ function officialLabelAtOrBefore(date) {
   return date < oficialCutoff ? "Referencial" : "Oficial";
 }
 
-function officialColorAtOrBefore(date) {
-  return date < oficialCutoff ? oficialColors.referencial : oficialColors.oficial;
+function officialSourceAtOrBefore(date) {
+  return date < oficialCutoff ? "referencial" : "oficial";
 }
 
 let data = await d3.csv(`${github}/datos/binance/${fileByTradeType[tradeType]}.csv`, d3.autoType);
@@ -170,7 +168,7 @@ const total_days = new Set(
     return t.toISOString().slice(0, 10);
   })
 ).size;
-return {github,fileByTradeType,oficialCutoff,oficialColors,binanceColor,parseDailyRate,referencialBcb,oficialNuevo,oficial,oficialMap,oficialSeries,oficialDateBisector,officialValueAtOrBefore,officialLabelAtOrBefore,officialColorAtOrBefore,data,total_days};
+return {github,fileByTradeType,oficialCutoff,parseDailyRate,referencialBcb,oficialNuevo,oficial,oficialMap,oficialSeries,oficialDateBisector,officialValueAtOrBefore,officialLabelAtOrBefore,officialSourceAtOrBefore,data,total_days};
 }});
 
 define({id: "9a9b6d9b", inputs: ["Inputs","stored_time","Generators"], outputs: ["opcionesDias","timeRanges","timeRangeKey"], body: (Inputs,stored_time,Generators) => {
@@ -211,15 +209,15 @@ const observation = Generators.input(plot);
 return {plot,observation};
 }});
 
-define({id: "846dcac3", inputs: ["observation","data","displayObservation","tipo_cotizacion","officialValueAtOrBefore","officialLabelAtOrBefore","officialColorAtOrBefore","binanceColor"], outputs: ["selected","plotHeader"], body: (observation,data,displayObservation,tipo_cotizacion,officialValueAtOrBefore,officialLabelAtOrBefore,officialColorAtOrBefore,binanceColor) => {
+define({id: "5552c4d9", inputs: ["observation","data","displayObservation","tipo_cotizacion","officialValueAtOrBefore","officialLabelAtOrBefore","sourceColorVariable","officialSourceAtOrBefore"], outputs: ["selected","plotHeader"], body: (observation,data,displayObservation,tipo_cotizacion,officialValueAtOrBefore,officialLabelAtOrBefore,sourceColorVariable,officialSourceAtOrBefore) => {
 const selected = observation ? observation : data.slice(-1)[0];
 const plotHeader = displayObservation(
   selected,
   tipo_cotizacion,
   officialValueAtOrBefore(selected.date),
   officialLabelAtOrBefore(selected.date),
-  officialColorAtOrBefore(selected.date),
-  binanceColor
+  sourceColorVariable(officialSourceAtOrBefore(selected.date)),
+  "var(--figures)"
 );
 return {selected,plotHeader};
 }});
@@ -323,16 +321,16 @@ selected.naive ? "y equivale a Bs. " + selected.naive : ""
 </script>
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
-<link rel="stylesheet" href="./_file/style.4ed5f2e5.css">
-<div class="observablehq observablehq--block"><!--:b35023de:--></div>
+<link rel="stylesheet" href="./_file/style.65d2dce8.css">
+<div class="observablehq observablehq--block"><!--:ce8b26da:--></div>
 <div class="observablehq observablehq--block"><!--:1e6bf285:--></div>
 <div class="observablehq observablehq--block"><!--:220a931b:--></div>
-<div class="observablehq observablehq--block"><!--:fe90ac27:--></div>
+<div class="observablehq observablehq--block"><!--:c96e730b:--></div>
 <div class="observablehq observablehq--block"><!--:9a9b6d9b:--></div>
 <div class="observablehq observablehq--block"><!--:cb49004c:--></div>
 <div class="observablehq observablehq--block"><!--:eecc0d5c:--></div>
 <div class="observablehq observablehq--block"><!--:77b3e1c9:--></div>
-<div class="observablehq observablehq--block"><!--:846dcac3:--></div>
+<div class="observablehq observablehq--block"><!--:5552c4d9:--></div>
 <div class="observablehq observablehq--block"><!--:d81136b0:--></div>
 <div id="titulo">Dólar en Bolivia</div>
 <div id="opcionesCompraVenta">
@@ -347,7 +345,7 @@ selected.naive ? "y equivale a Bs. " + selected.naive : ""
     </div>
     <observablehq-loading></observablehq-loading><!--:0f3850ab:-->
     <div id="graficoNota">
-        <div id="cotizacionSeleccionada">
+        <div id="cotizacionSeleccionada" style="color: var(--figures)">
             <observablehq-loading></observablehq-loading><!--:db14ec10:-->
         </div>
     </div>
