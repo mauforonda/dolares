@@ -10,14 +10,23 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
-URL = "https://www.bcb.gob.bo/tco_reporte_detalle_historico.php"
-TABLE_SELECTOR = "table.matrix"
+TABLA_URL = "https://www.bcb.gob.bo/tco_reporte_detalle_historico.php"
+TABLA_SELECTOR = "table.matrix"
+
+LANDING_URL = "https://www.bcb.gob.bo"
+LANDING_SELECTORS = {
+    "tco": ".is-tc-oficial .bcb-tco-num",
+    "fecha": ".is-tc-oficial .bcb-kpi2-asof time",
+}
+MUESTRA_BANCOS_VALIDACION = 5
+
 TOTALES = {"total": "TOTAL", "tco": "TCO"}
 TOTAL_BANCOS = "TOTAL BANCOS"
 NORMALIZACIONES_TEXTO = {
     r"-": "",
 }
 VENTA_DIFERENCIAL = 0.10
+
 COMPRAS_DETALLE_FN = "compras_detalle.csv"
 BANCOS_DETALLE_FN = "bancos_detalle.csv"
 COMPRA_FN = "compra.csv"
@@ -52,6 +61,10 @@ def normalizar_numeros(serie):
     ).fillna(0)
 
 
+def normalizar_decimal(texto):
+    return float(str(texto).strip().replace(".", "").replace(",", "."))
+
+
 def get_fecha(html):
     def codigo_meses():
         meses = [
@@ -76,15 +89,15 @@ def get_fecha(html):
     return dt(int(d.group(3)), meses[d.group(2)], int(d.group(1))).strftime("%Y-%m-%d")
 
 
-def consultar_fuente():
+def consultar_fuente(session):
 
     def get_tabla_cruda(session):
         # Consultar fuente y extraer tabla cruda
 
-        response = session.get(URL)
+        response = session.get(TABLA_URL)
         response.raise_for_status()
         html = BeautifulSoup(response.text, "html.parser")
-        table = html.select(TABLE_SELECTOR)[0]
+        table = html.select(TABLA_SELECTOR)[0]
         df = pd.read_html(StringIO(str(table)), thousands=".", decimal=",")[0]
         return html, df
 
@@ -109,12 +122,104 @@ def consultar_fuente():
             df[col] = normalizar_numeros(df[col])
         return df
 
-    session = requests.Session()
     html, df = get_tabla_cruda(session)
     timestamp = get_fecha(html)
     df = simplificar_tabla(df)
     df = normalizar_columnas_numeros(df)
     return timestamp, df
+
+
+def validar_novedad(session, df):
+
+    def consultar_landing(session):
+        response = session.get(LANDING_URL)
+        response.raise_for_status()
+        html = BeautifulSoup(response.text, "html.parser")
+        tco = html.select_one(LANDING_SELECTORS.get("tco"))
+        fecha = html.select_one(LANDING_SELECTORS.get("fecha"))
+        if tco is None:
+            raise ValueError(
+                f"No se encontro el selector de TCO en el landing: "
+                f"{LANDING_SELECTORS.get('tco')}"
+            )
+        if fecha is None:
+            raise ValueError(
+                f"No se encontro el selector de fecha en el landing: "
+                f"{LANDING_SELECTORS.get('fecha')}"
+            )
+        if not fecha.get("datetime"):
+            raise ValueError(
+                f"El selector de fecha no tiene atributo datetime: "
+                f"{LANDING_SELECTORS.get('fecha')}"
+            )
+        return fecha["datetime"], normalizar_decimal(tco.get_text(strip=True))
+
+    def get_ultima_fecha_guardada():
+        fn = DATA_DIR / COMPRA_FN
+        if not fn.exists():
+            return None
+        df = pd.read_csv(fn, parse_dates=["timestamp"])
+        if df.empty:
+            return None
+        return df["timestamp"].max().strftime("%Y-%m-%d")
+
+    def get_tco_tabla(df):
+        total_bancos = normalizar_nombres(TOTAL_BANCOS)
+        tco = df[
+            (df["banco"] == total_bancos)
+            & (df["cambio"].astype(str).str.upper() == TOTALES["tco"])
+        ]
+        if tco.empty:
+            raise ValueError("No se encontro TOTAL BANCOS / TCO en la tabla")
+        return float(tco.iloc[0]["monto"])
+
+    def validar_montos_bancos(df, ultima_fecha):
+        fn = DATA_DIR / BANCOS_DETALLE_FN
+        if ultima_fecha is None or not fn.exists():
+            return True
+
+        anterior = pd.read_csv(fn)
+        anterior = anterior[anterior["timestamp"] == ultima_fecha]
+        if anterior.empty:
+            return True
+
+        compras = get_compras(df, ultima_fecha)
+        actual = get_bancos(compras, ultima_fecha)
+        comparacion = anterior[["banco", "monto"]].merge(
+            actual[["banco", "monto"]],
+            on="banco",
+            suffixes=("_anterior", "_actual"),
+        )
+        if comparacion.empty:
+            return False
+
+        muestra = comparacion.sort_values("banco").head(MUESTRA_BANCOS_VALIDACION)
+        return (muestra["monto_anterior"] != muestra["monto_actual"]).all()
+
+    # Consulta el tipo de cambio en el landing del BCB
+    timestamp_landing, tco_landing = consultar_landing(session)
+
+    # La fecha de este tipo debe ser mayor a la última fecha que guardamos
+    # i.e. hay un nuevo dato
+    ultima_fecha = get_ultima_fecha_guardada()
+    if ultima_fecha is not None and timestamp_landing <= ultima_fecha:
+        return False, timestamp_landing
+
+    # El tipo en el landing debe ser igual al tipo en la nueva tabla que acabamos de consultar
+    # i.e. la tabla disponible desagrega este nuevo dato
+    tco_tabla = get_tco_tabla(df)
+    if round(tco_tabla, 2) != round(
+        tco_landing,
+        2,
+    ):
+        return False, timestamp_landing
+
+    # Una muestra de montos por banco en esta nueva tabla no coincide con la última fecha que guardamos
+    # i.e. la tabla disponible es realmente nueva
+    if not validar_montos_bancos(df, ultima_fecha):
+        return False, timestamp_landing
+
+    return True, timestamp_landing
 
 
 def get_compras(df, timestamp):
@@ -163,7 +268,7 @@ def get_cambio_oficial(bancos, timestamp):
 
 def get_venta(compra):
     venta = compra.copy()
-    venta["value"] = (venta["value"] + VENTA_DIFERENCIAL)
+    venta["value"] = venta["value"] + VENTA_DIFERENCIAL
     return venta
 
 
@@ -184,15 +289,33 @@ def consolidar(df, filename, subset):
     df.sort_values(subset).to_csv(fn, index=False)
 
 
-timestamp, df = consultar_fuente()
-
-compras = get_compras(df, timestamp)
-bancos = get_bancos(compras, timestamp)
-compra = get_cambio_oficial(bancos, timestamp)
-venta = get_venta(compra)
-
 DATA_DIR = Path(__file__).parent
-consolidar(compras, COMPRAS_DETALLE_FN, ["timestamp", "banco", "cambio"])
-consolidar(bancos, BANCOS_DETALLE_FN, ["timestamp", "banco"])
-consolidar(compra, COMPRA_FN, ["timestamp"])
-consolidar(venta, VENTA_FN, ["timestamp"])
+
+
+def main():
+    session = requests.Session()
+
+    # Consultamos la tabla de tipos y montos
+    _, df = consultar_fuente(session)
+
+    # Validamos que corresponda a nuevos datos y encontramos la fecha a la que corresponden
+    es_nuevo, timestamp = validar_novedad(session, df)
+    if not es_nuevo:
+        print(f"Sin datos nuevos. El landing del BCB tiene datos para el {timestamp}")
+        return
+
+    # Extraemos los datos que necesitamos
+    compras = get_compras(df, timestamp)
+    bancos = get_bancos(compras, timestamp)
+    compra = get_cambio_oficial(bancos, timestamp)
+    venta = get_venta(compra)
+
+    # Los guardamos
+    consolidar(compras, COMPRAS_DETALLE_FN, ["timestamp", "banco", "cambio"])
+    consolidar(bancos, BANCOS_DETALLE_FN, ["timestamp", "banco"])
+    consolidar(compra, COMPRA_FN, ["timestamp"])
+    consolidar(venta, VENTA_FN, ["timestamp"])
+
+
+if __name__ == "__main__":
+    main()
