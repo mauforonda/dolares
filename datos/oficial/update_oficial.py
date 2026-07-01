@@ -17,6 +17,9 @@ LANDING_URL = "https://www.bcb.gob.bo"
 LANDING_SELECTORS = {
     "tco": ".is-tc-oficial .bcb-tco-num",
     "fecha": ".is-tc-oficial .bcb-kpi2-asof time",
+    "tco_duo_fila": ".is-tc-oficial .bcb-tco-duo-row",
+    "tco_duo_num": ".bcb-tco-duo-num",
+    "tco_duo_fecha": ".bcb-tco-duo-label span",
 }
 MUESTRA_BANCOS_VALIDACION = 5
 
@@ -65,28 +68,36 @@ def normalizar_decimal(texto):
     return float(str(texto).strip().replace(".", "").replace(",", "."))
 
 
-def get_fecha(html):
-    def codigo_meses():
-        meses = [
-            "enero",
-            "febrero",
-            "marzo",
-            "abril",
-            "mayo",
-            "junio",
-            "julio",
-            "agosto",
-            "septiembre",
-            "octubre",
-            "noviembre",
-            "diciembre",
-        ]
-        return {mes: i + 1 for i, mes in enumerate(meses)}
+def codigo_meses():
+    meses = [
+        "enero",
+        "febrero",
+        "marzo",
+        "abril",
+        "mayo",
+        "junio",
+        "julio",
+        "agosto",
+        "septiembre",
+        "octubre",
+        "noviembre",
+        "diciembre",
+    ]
+    return {mes: i + 1 for i, mes in enumerate(meses)}
 
-    texto = html.select_one(".vrd-date-info").get_text(" ", strip=True)
+
+def normalizar_fecha_es(texto):
+    texto = texto.lower()
     meses = codigo_meses()
-    d = re.search(r"(\d{1,2})\s+de\s+(\w+)\s+de\s+(\d{4})", texto)
+    d = re.search(r"(\d{1,2})\s+de\s+(\w+),?\s+(?:de\s+)?(\d{4})", texto)
+    if d is None:
+        raise ValueError(f"No se pudo interpretar la fecha: {texto}")
     return dt(int(d.group(3)), meses[d.group(2)], int(d.group(1))).strftime("%Y-%m-%d")
+
+
+def get_fecha(html):
+    texto = html.select_one(".vrd-date-info").get_text(" ", strip=True)
+    return normalizar_fecha_es(texto)
 
 
 def consultar_fuente(session):
@@ -132,27 +143,54 @@ def consultar_fuente(session):
 def validar_novedad(session, df):
 
     def consultar_landing(session):
+        def consultar_landing_duo(html):
+            filas = html.select(LANDING_SELECTORS.get("tco_duo_fila"))
+            for fila in filas:
+                etiqueta = fila.get_text(" ", strip=True).lower()
+                if "mañana" not in etiqueta:
+                    continue
+                tco = fila.select_one(LANDING_SELECTORS.get("tco_duo_num"))
+                fecha = fila.select_one(LANDING_SELECTORS.get("tco_duo_fecha"))
+                if tco is None:
+                    raise ValueError(
+                        f"No se encontro el selector de TCO nocturno en el landing: "
+                        f"{LANDING_SELECTORS.get('tco_duo_num')}"
+                    )
+                if fecha is None:
+                    raise ValueError(
+                        f"No se encontro el selector de fecha nocturna en el landing: "
+                        f"{LANDING_SELECTORS.get('tco_duo_fecha')}"
+                    )
+                return (
+                    normalizar_fecha_es(fecha.get_text(" ", strip=True)),
+                    normalizar_decimal(tco.get_text(strip=True)),
+                )
+            return None
+
+        def consultar_landing_simple(html):
+            tco = html.select_one(LANDING_SELECTORS.get("tco"))
+            fecha = html.select_one(LANDING_SELECTORS.get("fecha"))
+            if tco is None:
+                raise ValueError(
+                    f"No se encontro el selector de TCO en el landing: "
+                    f"{LANDING_SELECTORS.get('tco')}"
+                )
+            if fecha is None:
+                raise ValueError(
+                    f"No se encontro el selector de fecha en el landing: "
+                    f"{LANDING_SELECTORS.get('fecha')}"
+                )
+            if not fecha.get("datetime"):
+                raise ValueError(
+                    f"El selector de fecha no tiene atributo datetime: "
+                    f"{LANDING_SELECTORS.get('fecha')}"
+                )
+            return fecha["datetime"], normalizar_decimal(tco.get_text(strip=True))
+
         response = session.get(LANDING_URL)
         response.raise_for_status()
         html = BeautifulSoup(response.text, "html.parser")
-        tco = html.select_one(LANDING_SELECTORS.get("tco"))
-        fecha = html.select_one(LANDING_SELECTORS.get("fecha"))
-        if tco is None:
-            raise ValueError(
-                f"No se encontro el selector de TCO en el landing: "
-                f"{LANDING_SELECTORS.get('tco')}"
-            )
-        if fecha is None:
-            raise ValueError(
-                f"No se encontro el selector de fecha en el landing: "
-                f"{LANDING_SELECTORS.get('fecha')}"
-            )
-        if not fecha.get("datetime"):
-            raise ValueError(
-                f"El selector de fecha no tiene atributo datetime: "
-                f"{LANDING_SELECTORS.get('fecha')}"
-            )
-        return fecha["datetime"], normalizar_decimal(tco.get_text(strip=True))
+        return consultar_landing_duo(html) or consultar_landing_simple(html)
 
     def get_ultima_fecha_guardada():
         fn = DATA_DIR / COMPRA_FN
