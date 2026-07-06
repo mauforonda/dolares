@@ -13,16 +13,6 @@ from bs4 import BeautifulSoup
 TABLA_URL = "https://www.bcb.gob.bo/tco_reporte_detalle_historico.php"
 TABLA_SELECTOR = "table.matrix"
 
-LANDING_URL = "https://www.bcb.gob.bo"
-LANDING_SELECTORS = {
-    "tco": ".is-tc-oficial .bcb-tco-num",
-    "fecha": ".is-tc-oficial .bcb-kpi2-asof time",
-    "tco_duo_fila": ".is-tc-oficial .bcb-tco-duo-row",
-    "tco_duo_num": ".bcb-tco-duo-num",
-    "tco_duo_fecha": ".bcb-tco-duo-label span",
-}
-MUESTRA_BANCOS_VALIDACION = 5
-
 TOTALES = {"total": "TOTAL", "tco": "TCO"}
 TOTAL_BANCOS = "TOTAL BANCOS"
 NORMALIZACIONES_TEXTO = {
@@ -64,10 +54,6 @@ def normalizar_numeros(serie):
     ).fillna(0)
 
 
-def normalizar_decimal(texto):
-    return float(str(texto).strip().replace(".", "").replace(",", "."))
-
-
 def codigo_meses():
     meses = [
         "enero",
@@ -96,8 +82,29 @@ def normalizar_fecha_es(texto):
 
 
 def get_fecha(html):
-    texto = html.select_one(".vrd-date-info").get_text(" ", strip=True)
-    return normalizar_fecha_es(texto)
+    fecha = html.select_one(".vrd-date-info")
+    if fecha is None:
+        raise ValueError("No se encontro la fecha de vigencia en la tabla")
+
+    vigencia = None
+    for elemento in fecha.find_all(string=re.compile(r"vigencia", re.I)):
+        vigencia = elemento.parent.get_text(" ", strip=True)
+        break
+
+    if vigencia is None:
+        raise ValueError("No se encontro el texto de Vigencia en la tabla")
+
+    return normalizar_fecha_es(vigencia)
+
+
+def get_ultima_fecha_guardada():
+    fn = DATA_DIR / COMPRA_FN
+    if not fn.exists():
+        return None
+    df = pd.read_csv(fn, parse_dates=["timestamp"])
+    if df.empty:
+        return None
+    return df["timestamp"].max().strftime("%Y-%m-%d")
 
 
 def consultar_fuente(session):
@@ -140,124 +147,12 @@ def consultar_fuente(session):
     return timestamp, df
 
 
-def validar_novedad(session, df):
-
-    def consultar_landing(session):
-        def consultar_landing_duo(html):
-            filas = html.select(LANDING_SELECTORS.get("tco_duo_fila"))
-            for fila in filas:
-                etiqueta = fila.get_text(" ", strip=True).lower()
-                if "mañana" not in etiqueta:
-                    continue
-                tco = fila.select_one(LANDING_SELECTORS.get("tco_duo_num"))
-                fecha = fila.select_one(LANDING_SELECTORS.get("tco_duo_fecha"))
-                if tco is None:
-                    raise ValueError(
-                        f"No se encontro el selector de TCO nocturno en el landing: "
-                        f"{LANDING_SELECTORS.get('tco_duo_num')}"
-                    )
-                if fecha is None:
-                    raise ValueError(
-                        f"No se encontro el selector de fecha nocturna en el landing: "
-                        f"{LANDING_SELECTORS.get('tco_duo_fecha')}"
-                    )
-                return (
-                    normalizar_fecha_es(fecha.get_text(" ", strip=True)),
-                    normalizar_decimal(tco.get_text(strip=True)),
-                )
-            return None
-
-        def consultar_landing_simple(html):
-            tco = html.select_one(LANDING_SELECTORS.get("tco"))
-            fecha = html.select_one(LANDING_SELECTORS.get("fecha"))
-            if tco is None:
-                raise ValueError(
-                    f"No se encontro el selector de TCO en el landing: "
-                    f"{LANDING_SELECTORS.get('tco')}"
-                )
-            if fecha is None:
-                raise ValueError(
-                    f"No se encontro el selector de fecha en el landing: "
-                    f"{LANDING_SELECTORS.get('fecha')}"
-                )
-            if not fecha.get("datetime"):
-                raise ValueError(
-                    f"El selector de fecha no tiene atributo datetime: "
-                    f"{LANDING_SELECTORS.get('fecha')}"
-                )
-            return fecha["datetime"], normalizar_decimal(tco.get_text(strip=True))
-
-        response = session.get(LANDING_URL)
-        response.raise_for_status()
-        html = BeautifulSoup(response.text, "html.parser")
-        return consultar_landing_duo(html) or consultar_landing_simple(html)
-
-    def get_ultima_fecha_guardada():
-        fn = DATA_DIR / COMPRA_FN
-        if not fn.exists():
-            return None
-        df = pd.read_csv(fn, parse_dates=["timestamp"])
-        if df.empty:
-            return None
-        return df["timestamp"].max().strftime("%Y-%m-%d")
-
-    def get_tco_tabla(df):
-        total_bancos = normalizar_nombres(TOTAL_BANCOS)
-        tco = df[
-            (df["banco"] == total_bancos)
-            & (df["cambio"].astype(str).str.upper() == TOTALES["tco"])
-        ]
-        if tco.empty:
-            raise ValueError("No se encontro TOTAL BANCOS / TCO en la tabla")
-        return float(tco.iloc[0]["monto"])
-
-    def validar_montos_bancos(df, ultima_fecha):
-        fn = DATA_DIR / BANCOS_DETALLE_FN
-        if ultima_fecha is None or not fn.exists():
-            return True
-
-        anterior = pd.read_csv(fn)
-        anterior = anterior[anterior["timestamp"] == ultima_fecha]
-        if anterior.empty:
-            return True
-
-        compras = get_compras(df, ultima_fecha)
-        actual = get_bancos(compras, ultima_fecha)
-        comparacion = anterior[["banco", "monto"]].merge(
-            actual[["banco", "monto"]],
-            on="banco",
-            suffixes=("_anterior", "_actual"),
-        )
-        if comparacion.empty:
-            return False
-
-        muestra = comparacion.sort_values("banco").head(MUESTRA_BANCOS_VALIDACION)
-        return (muestra["monto_anterior"] != muestra["monto_actual"]).all()
-
-    # Consulta el tipo de cambio en el landing del BCB
-    timestamp_landing, tco_landing = consultar_landing(session)
-
-    # La fecha de este tipo debe ser mayor a la última fecha que guardamos
-    # i.e. hay un nuevo dato
+def validar_novedad(timestamp):
+    # La fecha de vigencia debe ser mayor a la última fecha que guardamos.
     ultima_fecha = get_ultima_fecha_guardada()
-    if ultima_fecha is not None and timestamp_landing <= ultima_fecha:
-        return False, timestamp_landing
-
-    # El tipo en el landing debe ser igual al tipo en la nueva tabla que acabamos de consultar
-    # i.e. la tabla disponible desagrega este nuevo dato
-    tco_tabla = get_tco_tabla(df)
-    if round(tco_tabla, 2) != round(
-        tco_landing,
-        2,
-    ):
-        return False, timestamp_landing
-
-    # Una muestra de montos por banco en esta nueva tabla no coincide con la última fecha que guardamos
-    # i.e. la tabla disponible es realmente nueva
-    if not validar_montos_bancos(df, ultima_fecha):
-        return False, timestamp_landing
-
-    return True, timestamp_landing
+    if ultima_fecha is not None and timestamp <= ultima_fecha:
+        return False, timestamp
+    return True, timestamp
 
 
 def get_compras(df, timestamp):
@@ -334,12 +229,12 @@ def main():
     session = requests.Session()
 
     # Consultamos la tabla de tipos y montos
-    _, df = consultar_fuente(session)
+    timestamp, df = consultar_fuente(session)
 
     # Validamos que corresponda a nuevos datos y encontramos la fecha a la que corresponden
-    es_nuevo, timestamp = validar_novedad(session, df)
+    es_nuevo, timestamp = validar_novedad(timestamp)
     if not es_nuevo:
-        print(f"Sin datos nuevos. El landing del BCB tiene datos para el {timestamp}")
+        print(f"Sin datos nuevos. La tabla del BCB tiene vigencia {timestamp}")
         return
 
     # Extraemos los datos que necesitamos
