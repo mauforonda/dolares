@@ -13,6 +13,15 @@ from bs4 import BeautifulSoup
 TABLA_URL = "https://www.bcb.gob.bo/tco_reporte_detalle_historico.php"
 TABLA_SELECTOR = "table.matrix"
 
+LANDING_URL = "https://www.bcb.gob.bo"
+LANDING_SELECTORS = {
+    "tco": ".is-tc-oficial .bcb-tco-num",
+    "fecha": ".is-tc-oficial .bcb-kpi2-asof time",
+    "tco_duo_fila": ".is-tc-oficial .bcb-tco-duo-row",
+    "tco_duo_num": ".bcb-tco-duo-num",
+    "tco_duo_fecha": ".bcb-tco-duo-label span",
+}
+
 TOTALES = {"total": "TOTAL", "tco": "TCO"}
 TOTAL_BANCOS = "TOTAL BANCOS"
 NORMALIZACIONES_TEXTO = {
@@ -52,6 +61,10 @@ def normalizar_numeros(serie):
         ),
         errors="coerce",
     ).fillna(0)
+
+
+def normalizar_decimal(texto):
+    return float(str(texto).strip().replace(".", "").replace(",", "."))
 
 
 def codigo_meses():
@@ -97,8 +110,8 @@ def get_fecha(html):
     return normalizar_fecha_es(vigencia)
 
 
-def get_ultima_fecha_guardada():
-    fn = DATA_DIR / COMPRA_FN
+def get_ultima_fecha_guardada(filename):
+    fn = DATA_DIR / filename
     if not fn.exists():
         return None
     df = pd.read_csv(fn, parse_dates=["timestamp"])
@@ -147,12 +160,38 @@ def consultar_fuente(session):
     return timestamp, df
 
 
-def validar_novedad(timestamp):
-    # La fecha de vigencia debe ser mayor a la última fecha que guardamos.
-    ultima_fecha = get_ultima_fecha_guardada()
-    if ultima_fecha is not None and timestamp <= ultima_fecha:
-        return False, timestamp
-    return True, timestamp
+def consultar_landing(session):
+    response = session.get(LANDING_URL)
+    response.raise_for_status()
+    html = BeautifulSoup(response.text, "html.parser")
+
+    fila_manana = next(
+        (
+            fila
+            for fila in html.select(LANDING_SELECTORS["tco_duo_fila"])
+            if "mañana" in fila.get_text(" ", strip=True).lower()
+        ),
+        None,
+    )
+
+    if fila_manana is not None:
+        tco = fila_manana.select_one(LANDING_SELECTORS["tco_duo_num"])
+        fecha = fila_manana.select_one(LANDING_SELECTORS["tco_duo_fecha"])
+        fecha = fecha.get_text(" ", strip=True) if fecha else None
+    else:
+        tco = html.select_one(LANDING_SELECTORS["tco"])
+        fecha = html.select_one(LANDING_SELECTORS["fecha"])
+        fecha = fecha.get("datetime") if fecha else None
+
+    if tco is None or not fecha:
+        raise ValueError("No se pudo extraer el tipo de cambio oficial del landing")
+
+    timestamp = (
+        fecha
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", fecha)
+        else normalizar_fecha_es(fecha)
+    )
+    return timestamp, normalizar_decimal(tco.get_text(strip=True))
 
 
 def get_compras(df, timestamp):
@@ -212,7 +251,7 @@ def consolidar(df, filename, subset):
     if fn.exists():
         df_old = pd.read_csv(fn)
         df = pd.concat([df_old, df])
-        df = df.drop_duplicates(subset=subset, keep="last")
+    df = df.drop_duplicates(subset=subset, keep="last")
     for col, decimales in REDONDEO_COLUMNAS.items():
         if col in df:
             df[col] = df[col].round(decimales)
@@ -230,24 +269,29 @@ def main():
 
     # Consultamos la tabla de tipos y montos
     timestamp, df = consultar_fuente(session)
+    ultima_fecha_detalle = get_ultima_fecha_guardada(COMPRAS_DETALLE_FN)
 
-    # Validamos que corresponda a nuevos datos y encontramos la fecha a la que corresponden
-    es_nuevo, timestamp = validar_novedad(timestamp)
-    if not es_nuevo:
-        print(f"Sin datos nuevos. La tabla del BCB tiene vigencia {timestamp}")
+    if ultima_fecha_detalle is None or timestamp > ultima_fecha_detalle:
+        compras = get_compras(df, timestamp)
+        bancos = get_bancos(compras, timestamp)
+        compra = get_cambio_oficial(bancos, timestamp)
+        venta = get_venta(compra)
+
+        consolidar(compras, COMPRAS_DETALLE_FN, ["timestamp", "banco", "cambio"])
+        consolidar(bancos, BANCOS_DETALLE_FN, ["timestamp", "banco"])
+        consolidar(compra, COMPRA_FN, ["timestamp"])
+        consolidar(venta, VENTA_FN, ["timestamp"])
         return
 
-    # Extraemos los datos que necesitamos
-    compras = get_compras(df, timestamp)
-    bancos = get_bancos(compras, timestamp)
-    compra = get_cambio_oficial(bancos, timestamp)
-    venta = get_venta(compra)
+    timestamp_landing, tco_landing = consultar_landing(session)
+    if timestamp_landing > ultima_fecha_detalle:
+        compra = pd.DataFrame([{"timestamp": timestamp_landing, "value": tco_landing}])
+        venta = get_venta(compra)
+        consolidar(compra, COMPRA_FN, ["timestamp"])
+        consolidar(venta, VENTA_FN, ["timestamp"])
+        return
 
-    # Los guardamos
-    consolidar(compras, COMPRAS_DETALLE_FN, ["timestamp", "banco", "cambio"])
-    consolidar(bancos, BANCOS_DETALLE_FN, ["timestamp", "banco"])
-    consolidar(compra, COMPRA_FN, ["timestamp"])
-    consolidar(venta, VENTA_FN, ["timestamp"])
+    print(f"Sin datos nuevos. La tabla del BCB tiene vigencia {timestamp}")
 
 
 if __name__ == "__main__":
