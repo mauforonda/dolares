@@ -94,22 +94,6 @@ def normalizar_fecha_es(texto):
     return dt(int(d.group(3)), meses[d.group(2)], int(d.group(1))).strftime("%Y-%m-%d")
 
 
-def get_fecha(html):
-    fecha = html.select_one(".vrd-date-info")
-    if fecha is None:
-        raise ValueError("No se encontro la fecha de vigencia en la tabla")
-
-    vigencia = None
-    for elemento in fecha.find_all(string=re.compile(r"vigencia", re.I)):
-        vigencia = elemento.parent.get_text(" ", strip=True)
-        break
-
-    if vigencia is None:
-        raise ValueError("No se encontro el texto de Vigencia en la tabla")
-
-    return normalizar_fecha_es(vigencia)
-
-
 def get_ultima_fecha_guardada(filename):
     fn = DATA_DIR / filename
     if not fn.exists():
@@ -130,7 +114,7 @@ def consultar_fuente(session):
         html = BeautifulSoup(response.text, "html.parser")
         table = html.select(TABLA_SELECTOR)[0]
         df = pd.read_html(StringIO(str(table)), thousands=".", decimal=",")[0]
-        return html, df
+        return df
 
     def simplificar_tabla(df):
         # Simplificar tabla
@@ -153,11 +137,16 @@ def consultar_fuente(session):
             df[col] = normalizar_numeros(df[col])
         return df
 
-    html, df = get_tabla_cruda(session)
-    timestamp = get_fecha(html)
+    df = get_tabla_cruda(session)
     df = simplificar_tabla(df)
     df = normalizar_columnas_numeros(df)
-    return timestamp, df
+    return df
+
+
+def fecha_iso(texto):
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", texto):
+        return texto
+    return normalizar_fecha_es(texto)
 
 
 def consultar_landing(session):
@@ -186,12 +175,11 @@ def consultar_landing(session):
     if tco is None or not fecha:
         raise ValueError("No se pudo extraer el tipo de cambio oficial del landing")
 
-    timestamp = (
-        fecha
-        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", fecha)
-        else normalizar_fecha_es(fecha)
-    )
-    return timestamp, normalizar_decimal(tco.get_text(strip=True))
+    return fecha_iso(fecha), normalizar_decimal(tco.get_text(strip=True))
+
+
+def get_agregado_landing(timestamp, tco):
+    return pd.DataFrame([{"timestamp": timestamp, "value": tco}])
 
 
 def get_compras(df, timestamp):
@@ -244,6 +232,51 @@ def get_venta(compra):
     return venta
 
 
+def get_datos_detalle(df, timestamp):
+    compras = get_compras(df, timestamp)
+    bancos = get_bancos(compras, timestamp)
+    compra = get_cambio_oficial(bancos, timestamp)
+    venta = get_venta(compra)
+    return compras, bancos, compra, venta
+
+
+def misma_tabla_detalle(compras, ultima_fecha_detalle):
+    if ultima_fecha_detalle is None:
+        return False
+
+    fn = DATA_DIR / COMPRAS_DETALLE_FN
+    if not fn.exists():
+        return False
+
+    anterior = pd.read_csv(fn)
+    anterior = anterior[anterior["timestamp"] == ultima_fecha_detalle]
+    if anterior.empty:
+        return False
+
+    def normalizar(df):
+        columnas = ["banco", "cambio", "monto", "compras"]
+        df = df[columnas].copy()
+        df["cambio"] = df["cambio"].round(5)
+        df["monto"] = df["monto"].round(0).astype("Int64")
+        df["compras"] = df["compras"].round(0).astype("Int64")
+        return df.sort_values(columnas).reset_index(drop=True)
+
+    return normalizar(compras).equals(normalizar(anterior))
+
+
+def detalle_coincide_con_landing(compra, tco_landing):
+    tco_detalle = float(compra.iloc[0]["value"])
+    return round(tco_detalle, 2) == round(tco_landing, 2)
+
+
+def detalle_listo(compras, compra, tco_landing, ultima_fecha_detalle):
+    if not detalle_coincide_con_landing(compra, tco_landing):
+        return False
+    if misma_tabla_detalle(compras, ultima_fecha_detalle):
+        return False
+    return True
+
+
 def consolidar(df, filename, subset):
     df = df.copy()
 
@@ -267,31 +300,43 @@ DATA_DIR = Path(__file__).parent
 def main():
     session = requests.Session()
 
-    # Consultamos la tabla de tipos y montos
-    timestamp, df = consultar_fuente(session)
+    # El landing publica primero el TCO oficial y define la fecha canónica.
+    timestamp_landing, tco_landing = consultar_landing(session)
+    ultima_fecha_agregado = get_ultima_fecha_guardada(COMPRA_FN)
     ultima_fecha_detalle = get_ultima_fecha_guardada(COMPRAS_DETALLE_FN)
 
-    if ultima_fecha_detalle is None or timestamp > ultima_fecha_detalle:
-        compras = get_compras(df, timestamp)
-        bancos = get_bancos(compras, timestamp)
-        compra = get_cambio_oficial(bancos, timestamp)
-        venta = get_venta(compra)
+    agregado_nuevo = (
+        ultima_fecha_agregado is None or timestamp_landing > ultima_fecha_agregado
+    )
+    detalle_pendiente = (
+        ultima_fecha_detalle is None or timestamp_landing > ultima_fecha_detalle
+    )
 
-        consolidar(compras, COMPRAS_DETALLE_FN, ["timestamp", "banco", "cambio"])
-        consolidar(bancos, BANCOS_DETALLE_FN, ["timestamp", "banco"])
-        consolidar(compra, COMPRA_FN, ["timestamp"])
-        consolidar(venta, VENTA_FN, ["timestamp"])
+    if not agregado_nuevo and not detalle_pendiente:
+        print(f"Sin datos nuevos. El landing del BCB tiene fecha {timestamp_landing}")
         return
 
-    timestamp_landing, tco_landing = consultar_landing(session)
-    if timestamp_landing > ultima_fecha_detalle:
-        compra = pd.DataFrame([{"timestamp": timestamp_landing, "value": tco_landing}])
+    if agregado_nuevo:
+        compra = get_agregado_landing(timestamp_landing, tco_landing)
         venta = get_venta(compra)
         consolidar(compra, COMPRA_FN, ["timestamp"])
         consolidar(venta, VENTA_FN, ["timestamp"])
+
+    if not detalle_pendiente:
         return
 
-    print(f"Sin datos nuevos. La tabla del BCB tiene vigencia {timestamp}")
+    # La tabla detallada puede publicarse horas después. Solo la usamos si ya
+    # coincide con el landing y cambió respecto al último detalle guardado.
+    df = consultar_fuente(session)
+    compras, bancos, compra, venta = get_datos_detalle(df, timestamp_landing)
+    if not detalle_listo(compras, compra, tco_landing, ultima_fecha_detalle):
+        print(f"Detalle pendiente para {timestamp_landing}; se conserva el landing")
+        return
+
+    consolidar(compras, COMPRAS_DETALLE_FN, ["timestamp", "banco", "cambio"])
+    consolidar(bancos, BANCOS_DETALLE_FN, ["timestamp", "banco"])
+    consolidar(compra, COMPRA_FN, ["timestamp"])
+    consolidar(venta, VENTA_FN, ["timestamp"])
 
 
 if __name__ == "__main__":
