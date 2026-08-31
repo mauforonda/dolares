@@ -4,3 +4,4 @@
 view/dist/
 view/node_modules/
 view/src/.observablehq/cache/
+cloudflare/
