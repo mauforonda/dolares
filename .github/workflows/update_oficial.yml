@@ -1,8 +1,6 @@
 name: Actualizar tipo oficial
 
 on:
-  schedule:
-    - cron: '0 0-5 * * 2-6'
   workflow_dispatch:
 
 permissions:
@@ -28,6 +26,7 @@ jobs:
       - name: Actualizar
         run: |
           ./datos/oficial/update_oficial.py
+          ./datos/oficial/update_oficial_desagregado.py
       - name: Commit
         run: |
           git config --global user.email "dolares-bot@example.com"

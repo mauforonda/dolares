@@ -20,6 +20,6 @@ Con datos adicionales con [montos](datos/referencial_bcb/compra_monto.csv) y [ti
 
 ## Tipo oficial
 
-Para [compra](datos/oficial/compra.csv) y [venta](datos/oficial/venta.csv). 
+Para [compra](datos/oficial/compra.csv). El archivo histórico de [venta](datos/oficial/venta.csv) se dejó de actualizar el 26 de septiembre de 2026.
 
-Con datos adicionales con el [detalle de compras](datos/oficial/compras_detalle.csv) y el [tipo estimado por banco](datos/oficial/bancos_detalle.csv).
+Con datos adicionales con el [detalle de compras](datos/oficial/compras_detalle.csv) y el [tipo estimado por banco](datos/oficial/bancos_detalle.csv). Sus fechas corresponden a la fecha de corte de las transacciones, no a la vigencia del TCO.
