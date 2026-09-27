@@ -45,6 +45,7 @@ const fileByTradeType = {
   sell: "venta",
 };
 const oficialCutoff = "2026-06-29";
+const ventaNoReguladaCutoff = "2026-09-26";
 
 const parseDailyRate = (d) => ({
   timestamp: new Date(d.timestamp + "T00:00-04:00"),
@@ -59,12 +60,27 @@ const oficialNuevo = await d3.csv(
   `${github}/datos/oficial/${fileByTradeType[tradeType]}.csv`,
   parseDailyRate
 );
+const oficialCompra =
+  tradeType === "sell"
+    ? await d3.csv(`${github}/datos/oficial/compra.csv`, parseDailyRate)
+    : [];
 const oficial = [
   ...referencialBcb
     .filter((d) => d.timestamp.toISOString().slice(0, 10) < oficialCutoff)
     .map((d) => ({ ...d, fuente: "referencial" })),
   ...oficialNuevo
-    .filter((d) => d.timestamp.toISOString().slice(0, 10) >= oficialCutoff)
+    .filter((d) => {
+      const fecha = d.timestamp.toISOString().slice(0, 10);
+      return (
+        fecha >= oficialCutoff &&
+        (tradeType !== "sell" || fecha < ventaNoReguladaCutoff)
+      );
+    })
+    .map((d) => ({ ...d, fuente: "oficial" })),
+  ...oficialCompra
+    .filter(
+      (d) => d.timestamp.toISOString().slice(0, 10) >= ventaNoReguladaCutoff,
+    )
     .map((d) => ({ ...d, fuente: "oficial" })),
 ];
 
@@ -87,6 +103,9 @@ function officialValueAtOrBefore(date) {
 }
 
 function officialLabelAtOrBefore(date) {
+  if (tradeType === "sell" && date >= ventaNoReguladaCutoff) {
+    return "Oficial (compra)";
+  }
   return date < oficialCutoff ? "Referencial" : "Oficial";
 }
 
