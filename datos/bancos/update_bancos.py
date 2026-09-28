@@ -10,10 +10,37 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 
 DATA_DIR = Path(__file__).parent
 TIMEZONE = ZoneInfo("America/La_Paz")
+REQUEST_TIMEOUT = (10, 30)
+
+SESSION = requests.Session()
+SESSION.headers.update(
+    {
+        "User-Agent": (
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/131.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "es-BO,es;q=0.9,en;q=0.8",
+        "Cache-Control": "no-cache",
+    }
+)
+RETRY = Retry(
+    total=3,
+    connect=3,
+    read=3,
+    status=3,
+    backoff_factor=1,
+    status_forcelist=(429, 500, 502, 503, 504),
+    allowed_methods=frozenset({"GET", "POST"}),
+    raise_on_status=False,
+)
+SESSION.mount("https://", HTTPAdapter(max_retries=RETRY))
 
 URLS = {
     "banco_bisa": "https://www.bisa.com/",
@@ -32,13 +59,13 @@ URLS = {
 
 
 def descargar(url):
-    response = requests.get(url, timeout=30)
+    response = SESSION.get(url, timeout=REQUEST_TIMEOUT)
     response.raise_for_status()
     return BeautifulSoup(response.text, "html.parser")
 
 
 def descargar_json(url):
-    response = requests.get(url, timeout=30)
+    response = SESSION.get(url, timeout=REQUEST_TIMEOUT)
     response.raise_for_status()
     return response.json()
 
@@ -179,10 +206,10 @@ def banco_union():
 
 
 def banco_fie():
-    response = requests.post(
+    response = SESSION.post(
         "https://www.bancofie.com.bo/api/tcl",
         headers={"Content-Type": "application/json", "Referer": URLS["banco_fie"]},
-        timeout=30,
+        timeout=REQUEST_TIMEOUT,
     )
     response.raise_for_status()
     documento = response.json()["resultado"]["documento"]
@@ -211,6 +238,7 @@ def banco_pyme_de_la_comunidad():
 BANCOS = {
     nombre: globals()[nombre]
     for nombre in URLS
+    if nombre != "banco_prodem"  # GitHub Actions no logra conectarse al servidor.
 }
 
 
