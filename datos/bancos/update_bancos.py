@@ -12,6 +12,8 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+from requests.adapters import HTTPAdapter
+from urllib3.util.ssl_ import create_urllib3_context
 
 
 DATA_DIR = Path(__file__).parent
@@ -43,16 +45,34 @@ URLS = {
 }
 
 
+class BCPAdapter(HTTPAdapter):
+    def init_poolmanager(self, *args, **kwargs):
+        context = create_urllib3_context()
+        # BCP requiere RSA estático con AES-GCM, excluido por el Python de Actions.
+        # Conservamos los cifrados existentes y la verificación de certificados.
+        ciphers = [
+            cipher["name"]
+            for cipher in context.get_ciphers()
+            if cipher["protocol"] != "TLSv1.3"
+        ]
+        context.set_ciphers(":".join([*ciphers, "AES256-GCM-SHA384"]))
+        kwargs["ssl_context"] = context
+        return super().init_poolmanager(*args, **kwargs)
+
+
 def solicitar(method, url, headers=None, max_retries=3):
     request_headers = {**REQUEST_HEADERS, **(headers or {})}
     for intento in range(max_retries + 1):
         try:
-            response = requests.request(
-                method,
-                url,
-                headers=request_headers,
-                timeout=REQUEST_TIMEOUT,
-            )
+            with requests.Session() as session:
+                if url.startswith(URLS["banco_de_credito"]):
+                    session.mount(URLS["banco_de_credito"], BCPAdapter())
+                response = session.request(
+                    method,
+                    url,
+                    headers=request_headers,
+                    timeout=REQUEST_TIMEOUT,
+                )
             response.raise_for_status()
             return response
         except requests.RequestException:
