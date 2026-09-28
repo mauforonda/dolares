@@ -1,0 +1,44 @@
+name: Actualizar tipos de cambio bancarios
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    name: actualizar y guardar cotizaciones
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Actualizar cotizaciones
+        id: actualizar
+        continue-on-error: true
+        run: ./datos/bancos/update_bancos.py
+
+      - name: Guardar datos disponibles
+        if: always()
+        run: |
+          git config --global user.email "dolares-bot@example.com"
+          git config --global user.name "dolares-bot"
+          git add datos/bancos/compra.csv datos/bancos/venta.csv
+          git diff --cached --quiet || (git commit -m "[ci] update bancos"; git push -q origin main)
+
+      - name: Reportar fallos
+        if: steps.actualizar.outcome == 'failure'
+        run: exit 1
