@@ -2,6 +2,12 @@ name: Actualizar tipos de cambio bancarios
 
 on:
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Consultar sin modificar los CSV ni hacer commit"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -29,10 +35,17 @@ jobs:
       - name: Actualizar cotizaciones
         id: actualizar
         continue-on-error: true
-        run: ./datos/bancos/update_bancos.py
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            ./datos/bancos/update_bancos.py --dry-run
+          else
+            ./datos/bancos/update_bancos.py
+          fi
 
       - name: Guardar datos disponibles
-        if: always()
+        if: ${{ always() && inputs.dry_run != true }}
         run: |
           git config --global user.email "dolares-bot@example.com"
           git config --global user.name "dolares-bot"

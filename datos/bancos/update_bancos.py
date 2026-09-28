@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
+import argparse
 import re
 import sys
+import time
 import unicodedata
 from datetime import datetime
 from pathlib import Path
@@ -10,37 +12,20 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 
 
 DATA_DIR = Path(__file__).parent
 TIMEZONE = ZoneInfo("America/La_Paz")
 REQUEST_TIMEOUT = (10, 30)
-
-SESSION = requests.Session()
-SESSION.headers.update(
-    {
-        "User-Agent": (
-            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-            "(KHTML, like Gecko) Chrome/131.0 Safari/537.36"
-        ),
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "es-BO,es;q=0.9,en;q=0.8",
-        "Cache-Control": "no-cache",
-    }
-)
-RETRY = Retry(
-    total=3,
-    connect=3,
-    read=3,
-    status=3,
-    backoff_factor=1,
-    status_forcelist=(429, 500, 502, 503, 504),
-    allowed_methods=frozenset({"GET", "POST"}),
-    raise_on_status=False,
-)
-SESSION.mount("https://", HTTPAdapter(max_retries=RETRY))
+REQUEST_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/131.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "es-BO,es;q=0.9,en;q=0.8",
+    "Cache-Control": "no-cache",
+}
 
 URLS = {
     "banco_bisa": "https://www.bisa.com/",
@@ -58,16 +43,30 @@ URLS = {
 }
 
 
+def solicitar(method, url, headers=None, max_retries=3):
+    request_headers = {**REQUEST_HEADERS, **(headers or {})}
+    for intento in range(max_retries + 1):
+        try:
+            response = requests.request(
+                method,
+                url,
+                headers=request_headers,
+                timeout=REQUEST_TIMEOUT,
+            )
+            response.raise_for_status()
+            return response
+        except requests.RequestException:
+            if intento == max_retries:
+                raise
+            time.sleep(2**intento)
+
+
 def descargar(url):
-    response = SESSION.get(url, timeout=REQUEST_TIMEOUT)
-    response.raise_for_status()
-    return BeautifulSoup(response.text, "html.parser")
+    return BeautifulSoup(solicitar("GET", url).text, "html.parser")
 
 
 def descargar_json(url):
-    response = SESSION.get(url, timeout=REQUEST_TIMEOUT)
-    response.raise_for_status()
-    return response.json()
+    return solicitar("GET", url).json()
 
 
 def texto(elemento):
@@ -206,12 +205,11 @@ def banco_union():
 
 
 def banco_fie():
-    response = SESSION.post(
+    response = solicitar(
+        "POST",
         "https://www.bancofie.com.bo/api/tcl",
         headers={"Content-Type": "application/json", "Referer": URLS["banco_fie"]},
-        timeout=REQUEST_TIMEOUT,
     )
-    response.raise_for_status()
     documento = response.json()["resultado"]["documento"]
     return cotizaciones_desde_texto(
         documento, r"d[oó]lar\s+compra", r"d[oó]lar\s+venta"
@@ -267,7 +265,7 @@ def actualizar_archivo(tipo_cotizacion, nuevos):
     datos.to_csv(ruta, columns=columnas, index=False)
 
 
-def main():
+def main(dry_run=False):
     timestamp = datetime.now(TIMEZONE).date().isoformat()
     registros = []
     errores = []
@@ -294,7 +292,7 @@ def main():
         registros,
         columns=["tipo_cotizacion", "timestamp", "banco", "valor"],
     )
-    if not nuevos.empty:
+    if not dry_run and not nuevos.empty:
         for tipo_cotizacion in ("compra", "venta"):
             actualizar_archivo(tipo_cotizacion, nuevos)
 
@@ -305,4 +303,10 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="consultar bancos sin modificar los archivos CSV",
+    )
+    sys.exit(main(dry_run=parser.parse_args().dry_run))
