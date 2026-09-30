@@ -1,380 +1,87 @@
-<!DOCTYPE html>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Dólares</title>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
-<link rel="preload" as="style" href="./_observablehq/theme-air,near-midnight.css">
-<link rel="preload" as="style" href="./_observablehq/stdlib/inputs.css">
-<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
-<link rel="stylesheet" type="text/css" href="./_observablehq/theme-air,near-midnight.css">
-<link rel="stylesheet" type="text/css" href="./_observablehq/stdlib/inputs.css">
-<link rel="modulepreload" href="./_observablehq/client.js">
-<link rel="modulepreload" href="./_observablehq/runtime.js">
-<link rel="modulepreload" href="./_observablehq/stdlib.js">
-<link rel="modulepreload" href="./_import/components/plot.0ca9f695.js">
-<link rel="modulepreload" href="./_import/components/colors.b8607fe9.js">
-<link rel="modulepreload" href="./_npm/@observablehq/plot@0.6.17/_esm.js">
-<link rel="modulepreload" href="./_npm/htl@1.0.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3@7.9.0/_esm.js">
-<link rel="modulepreload" href="./_observablehq/stdlib/inputs.js">
-<link rel="modulepreload" href="./_npm/isoformat@0.2.1/_esm.js">
-<link rel="modulepreload" href="./_npm/interval-tree-1d@1.0.4/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-array@3.2.4/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-axis@3.0.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-brush@3.0.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-chord@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-color@3.1.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-contour@4.0.2/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-delaunay@6.0.4/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-dispatch@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-drag@3.0.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-dsv@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-ease@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-fetch@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-force@3.0.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-format@3.1.2/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-geo@3.1.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-hierarchy@3.1.2/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-interpolate@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-path@3.1.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-polygon@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-quadtree@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-random@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-scale@4.0.2/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-scale-chromatic@3.1.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-selection@3.0.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-shape@3.2.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-time@3.1.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-time-format@4.1.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-timer@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-transition@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-zoom@3.0.0/_esm.js">
-<link rel="modulepreload" href="./_npm/binary-search-bounds@2.0.5/_esm.js">
-<link rel="modulepreload" href="./_npm/internmap@2.0.3/_esm.js">
-<link rel="modulepreload" href="./_npm/delaunator@5.1.0/_esm.js">
-<link rel="modulepreload" href="./_npm/robust-predicates@3.0.3/_esm.js">
-<link rel="icon" href="https://mauforonda.github.io/images/icon.svg" type="image/png">
-<script type="module">
-
-import {define} from "./_observablehq/client.js";
-
-define({id: "ce8b26da", inputs: ["display","localStorage","Inputs","Generators"], outputs: ["drawPlot","displayObservation","paletteStyle","sourceColorVariable","default_cotizacion","stored_cotizacion","selected_cotizacion","input_cotizacion","tipo_cotizacion"], body: async (display,localStorage,Inputs,Generators) => {
-const [{drawPlot, displayObservation}, {paletteStyle, sourceColorVariable}] = await Promise.all([import("./_import/components/plot.0ca9f695.js"), import("./_import/components/colors.b8607fe9.js")]);
-
-display(paletteStyle);
-
-const default_cotizacion = "naive";
-const stored_cotizacion = localStorage.getItem("tipo-cotizacion");
-const selected_cotizacion = stored_cotizacion
-  ? stored_cotizacion
-  : default_cotizacion;
-
-const input_cotizacion = Inputs.input(selected_cotizacion);
-const tipo_cotizacion = Generators.input(input_cotizacion);
-return {drawPlot,displayObservation,paletteStyle,sourceColorVariable,default_cotizacion,stored_cotizacion,selected_cotizacion,input_cotizacion,tipo_cotizacion};
-}});
-
-define({id: "1e6bf285", inputs: ["localStorage"], outputs: ["default_time","stored_time"], body: (localStorage) => {
-const default_time = "30";
-const stored_time = localStorage.getItem("timerange") || default_time;
-return {default_time,stored_time};
-}});
-
-define({id: "220a931b", inputs: ["Inputs","Generators"], outputs: ["tradeTypes","tradeType","texto_cotizaciones"], body: (Inputs,Generators) => {
-const tradeTypes = Inputs.radio(["buy", "sell"], {
-  format: (d) => (d == "buy" ? "compra" : "venta"),
-  value: "buy",
-});
-const tradeType = Generators.input(tradeTypes);
-
-const texto_cotizaciones = (cotizacion) => {
-  const opciones = {
-    median: "mediana de todos los precios listados",
-    vwap: "promedio ponderado por volumen",
-    naive: `valor más frecuente en el 10% de ofertas más bajo (compra) o alto (venta)`,
-  };
-  return opciones[cotizacion];
-};
-return {tradeTypes,tradeType,texto_cotizaciones};
-}});
-
-define({id: "c96e730b", inputs: ["d3","tradeType"], outputs: ["github","fileByTradeType","oficialCutoff","parseDailyRate","referencialBcb","oficialNuevo","oficial","oficialMap","oficialSeries","oficialDateBisector","officialValueAtOrBefore","officialLabelAtOrBefore","officialSourceAtOrBefore","data","total_days"], body: async (d3,tradeType) => {
-const github = "https://raw.githubusercontent.com/mauforonda/dolares/main";
-const fileByTradeType = {
-  buy: "compra",
-  sell: "venta",
-};
-const oficialCutoff = "2026-06-29";
-
-const parseDailyRate = (d) => ({
-  timestamp: new Date(d.timestamp + "T00:00-04:00"),
-  value: +d.value,
-});
-
-const referencialBcb = await d3.csv(
-  `${github}/datos/referencial_bcb/${fileByTradeType[tradeType]}.csv`,
-  parseDailyRate
-);
-const oficialNuevo = await d3.csv(
-  `${github}/datos/oficial/${fileByTradeType[tradeType]}.csv`,
-  parseDailyRate
-);
-const oficial = [
-  ...referencialBcb
-    .filter((d) => d.timestamp.toISOString().slice(0, 10) < oficialCutoff)
-    .map((d) => ({ ...d, fuente: "referencial" })),
-  ...oficialNuevo
-    .filter((d) => d.timestamp.toISOString().slice(0, 10) >= oficialCutoff)
-    .map((d) => ({ ...d, fuente: "oficial" })),
-];
-
-const oficialMap = new Map(
-  oficial.map((o) => [o.timestamp.toISOString().slice(0, 10), o.value])
-);
-const oficialSeries = oficial
-  .map((o) => ({
-    date: o.timestamp.toISOString().slice(0, 10),
-    value: o.value,
-  }))
-  .sort((a, b) => d3.ascending(a.date, b.date));
-const oficialDateBisector = d3.bisector((d) => d.date).right;
-
-function officialValueAtOrBefore(date) {
-  const exact = oficialMap.get(date);
-  if (exact !== undefined) return exact;
-  const i = oficialDateBisector(oficialSeries, date) - 1;
-  return i >= 0 ? oficialSeries[i].value : undefined;
-}
-
-function officialLabelAtOrBefore(date) {
-  return date < oficialCutoff ? "Referencial" : "Oficial";
-}
-
-function officialSourceAtOrBefore(date) {
-  return date < oficialCutoff ? "referencial" : "oficial";
-}
-
-let data = await d3.csv(`${github}/datos/binance/${fileByTradeType[tradeType]}.csv`, d3.autoType);
-
-data = data.map((d) => ({
-  ...d,
-  date: d.timestamp.toISOString().slice(0, 10),
-}));
-
-const total_days = new Set(
-  data.map((d) => {
-    const t = new Date(d.timestamp.getTime() - 4 * 3600e3);
-    return t.toISOString().slice(0, 10);
-  })
-).size;
-return {github,fileByTradeType,oficialCutoff,parseDailyRate,referencialBcb,oficialNuevo,oficial,oficialMap,oficialSeries,oficialDateBisector,officialValueAtOrBefore,officialLabelAtOrBefore,officialSourceAtOrBefore,data,total_days};
-}});
-
-define({id: "9a9b6d9b", inputs: ["Inputs","stored_time","Generators"], outputs: ["opcionesDias","timeRanges","timeRangeKey"], body: (Inputs,stored_time,Generators) => {
-const opcionesDias = {
-  all: "todo",
-  90: "3 meses",
-  30: "1 mes",
-  7: "1 semana",
-  3: "3 días",
-};
-const timeRanges = Inputs.radio(Object.keys(opcionesDias), {
-  format: (d) => opcionesDias[d],
-  sort: (a, b) => {
-    if (a === "all") return -1;
-    if (b === "all") return 1;
-    return Number(b) - Number(a);
-  },
-  value: stored_time,
-});
-const timeRangeKey = Generators.input(timeRanges);
-return {opcionesDias,timeRanges,timeRangeKey};
-}});
-
-define({id: "cb49004c", inputs: ["localStorage","timeRangeKey","total_days"], outputs: ["timeRange"], body: (localStorage,timeRangeKey,total_days) => {
-localStorage.setItem("timerange", timeRangeKey);
-const timeRange = timeRangeKey === "all" ? total_days : Number(timeRangeKey);
-return {timeRange};
-}});
-
-define({id: "eecc0d5c", inputs: ["Generators"], outputs: ["dark"], body: (Generators) => {
-const dark = Generators.dark();
-return {dark};
-}});
-
-define({id: "77b3e1c9", inputs: ["drawPlot","data","oficial","width","tipo_cotizacion","timeRange","dark","Generators"], outputs: ["plot","observation"], body: (drawPlot,data,oficial,width,tipo_cotizacion,timeRange,dark,Generators) => {
-const plot = drawPlot(data, oficial, width, tipo_cotizacion, timeRange, dark);
-const observation = Generators.input(plot);
-return {plot,observation};
-}});
-
-define({id: "5552c4d9", inputs: ["observation","data","displayObservation","tipo_cotizacion","officialValueAtOrBefore","officialLabelAtOrBefore","sourceColorVariable","officialSourceAtOrBefore"], outputs: ["selected","plotHeader"], body: (observation,data,displayObservation,tipo_cotizacion,officialValueAtOrBefore,officialLabelAtOrBefore,sourceColorVariable,officialSourceAtOrBefore) => {
-const selected = observation ? observation : data.slice(-1)[0];
-const plotHeader = displayObservation(
-  selected,
-  tipo_cotizacion,
-  officialValueAtOrBefore(selected.date),
-  officialLabelAtOrBefore(selected.date),
-  sourceColorVariable(officialSourceAtOrBefore(selected.date)),
-  "var(--figures)"
-);
-return {selected,plotHeader};
-}});
-
-define({id: "d81136b0", inputs: ["Event","texto_cotizaciones","htl","selected_cotizacion","input_cotizacion","localStorage"], outputs: ["set","cambio_cotizacion"], body: (Event,texto_cotizaciones,htl,selected_cotizacion,input_cotizacion,localStorage) => {
-function set(input, value) {
-  input.value = value;
-  input.dispatchEvent(new Event("input", { bubbles: true }));
-}
-
-function cambio_cotizacion(cotizacion) {
-  const texto = texto_cotizaciones(cotizacion);
-  const input_button = htl.html`<span class="cotizacion">${texto}</span>`;
-  if (cotizacion == selected_cotizacion) {
-    input_button.classList.add("selected");
-  }
-  input_button.onclick = () => {
-    set(input_cotizacion, cotizacion);
-    localStorage.setItem("tipo-cotizacion", cotizacion);
-    document.querySelector(".selected").classList.remove("selected");
-    input_button.classList.add("selected");
-    document.querySelector("#cotizacionSeleccionada").textContent = texto;
-  };
-  return input_button;
-}
-return {set,cambio_cotizacion};
-}});
-
-define({id: "9cf6dfe6", mode: "inline", inputs: ["tradeTypes","display"], body: async (tradeTypes,display) => {
-display(await(
-tradeTypes
-))
-}});
-
-define({id: "845d4acb", mode: "inline", inputs: ["plotHeader","display"], body: async (plotHeader,display) => {
-display(await(
-plotHeader
-))
-}});
-
-define({id: "6c4ada2c", mode: "inline", inputs: ["timeRanges","display"], body: async (timeRanges,display) => {
-display(await(
-timeRanges
-))
-}});
-
-define({id: "0f3850ab", mode: "inline", inputs: ["plot","display"], body: async (plot,display) => {
-display(await(
-plot
-))
-}});
-
-define({id: "db14ec10", mode: "inline", inputs: ["texto_cotizaciones","selected_cotizacion","display"], body: async (texto_cotizaciones,selected_cotizacion,display) => {
-display(await(
-texto_cotizaciones(selected_cotizacion)
-))
-}});
-
-define({id: "81b20b57", mode: "inline", inputs: ["selected","tipo_cotizacion","display"], body: async (selected,tipo_cotizacion,display) => {
-display(await(
-selected[tipo_cotizacion]
-))
-}});
-
-define({id: "daaa1762", mode: "inline", inputs: ["cambio_cotizacion","display"], body: async (cambio_cotizacion,display) => {
-display(await(
-cambio_cotizacion("median")
-))
-}});
-
-define({id: "f6967881", mode: "inline", inputs: ["selected","display"], body: async (selected,display) => {
-display(await(
-selected.median
-))
-}});
-
-define({id: "61e0de14", mode: "inline", inputs: ["cambio_cotizacion","display"], body: async (cambio_cotizacion,display) => {
-display(await(
-cambio_cotizacion("vwap")
-))
-}});
-
-define({id: "adb395cc", mode: "inline", inputs: ["selected","display"], body: async (selected,display) => {
-display(await(
-selected.vwap ? "y equivale a Bs. " + selected.vwap : ""
-))
-}});
-
-define({id: "ce7c2cb0", mode: "inline", inputs: ["cambio_cotizacion","display"], body: async (cambio_cotizacion,display) => {
-display(await(
-cambio_cotizacion("naive")
-))
-}});
-
-define({id: "05c0d78b", mode: "inline", inputs: ["selected","display"], body: async (selected,display) => {
-display(await(
-selected.naive ? "y equivale a Bs. " + selected.naive : ""
-))
-}});
-
-</script>
-<div id="observablehq-center">
-<main id="observablehq-main" class="observablehq">
-<link rel="stylesheet" href="./_file/style.65d2dce8.css">
-<div class="observablehq observablehq--block"><!--:ce8b26da:--></div>
-<div class="observablehq observablehq--block"><!--:1e6bf285:--></div>
-<div class="observablehq observablehq--block"><!--:220a931b:--></div>
-<div class="observablehq observablehq--block"><!--:c96e730b:--></div>
-<div class="observablehq observablehq--block"><!--:9a9b6d9b:--></div>
-<div class="observablehq observablehq--block"><!--:cb49004c:--></div>
-<div class="observablehq observablehq--block"><!--:eecc0d5c:--></div>
-<div class="observablehq observablehq--block"><!--:77b3e1c9:--></div>
-<div class="observablehq observablehq--block"><!--:5552c4d9:--></div>
-<div class="observablehq observablehq--block"><!--:d81136b0:--></div>
-<div id="titulo">Dólar en Bolivia</div>
-<div id="opcionesCompraVenta">
-    <observablehq-loading></observablehq-loading><!--:9cf6dfe6:-->
-</div>
-<div id="precioValor">
-    <observablehq-loading></observablehq-loading><!--:845d4acb:-->
-</div>
-<div id="grafico" class="card">
-    <div id="opcionesTiempo">
-        <observablehq-loading></observablehq-loading><!--:6c4ada2c:-->
-    </div>
-    <observablehq-loading></observablehq-loading><!--:0f3850ab:-->
-    <div id="graficoNota">
-        <div id="cotizacionSeleccionada" style="color: var(--figures)">
-            <observablehq-loading></observablehq-loading><!--:db14ec10:-->
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="theme-color" content="rgb(250, 250, 250)"/>
+    <title>Dólar en Bolivia</title>
+    <link rel="icon" type="image/svg+xml" href="https://mauforonda.github.io/images/icon.svg"/>
+    <link rel="stylesheet" href="style.css"/>
+    <script type="importmap">
+      {
+        "imports": {
+          "@observablehq/plot": "https://esm.sh/@observablehq/plot@0.6.17",
+          "d3": "https://esm.sh/d3@7.9.0"
+        }
+      }
+    </script>
+    <script type="module" src="app.js"></script>
+  </head>
+  <body>
+    <main data-state="loading" aria-busy="true">
+      <header class="page-header">
+        <div class="header-title">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span class="text-title">Dólar en Bolivia</span>
         </div>
-    </div>
-</div>
-<div id="explicacion">
-    <details>
-        <summary>¿De dónde salen estos números?</summary>
-        <div class="content">
-<p>El Banco Central de Bolivia <a href="https://www.bcb.gob.bo/" target="_blank" rel="noopener noreferrer">publica</a> los tipos de cambio oficial y referencial como promedios ponderados de operaciones cambiarias en entidades financieras para días hábiles.</p>
-<p>El tipo de cambio Binance se construye con las ofertas de USDT en el mercado Binance P2P para USDT por bolivianos. <a href="https://p2p.binance.com/en/trade/all-payments/USDT?fiat=BOB" target="_blank" rel="noopener noreferrer">Binance P2P</a> es un mercado en internet donde la gente puede comprar y vender USDT, una criptomoneda cuya cotización simula el valor del dólar americano. El valor de USDT tiende a subir y bajar junto al valor del dólar en la calle. Cuando alguien quiere vender USDT por bolivianos, ingresa a Binance P2P y publica una oferta, que consiste en una cotización y un monto. Binance P2P lista docenas de ofertas todo el tiempo.</p>
-<p>Sin embargo, este listado no incluye una cotización estimada de mercado o información de qué ofertas se toman efectivamente. Es sólo una lista de ofertas. Entonces ¿de dónde sale que 1 Dólar equivale a <observablehq-loading></observablehq-loading><!--:81b20b57:--> Bolivianos y cómo consolidar la información de este listado en un sólo valor referencial?</p>
-<p>Ofrezco 3 opciones:</p>
-<p>La <observablehq-loading></observablehq-loading><!--:daaa1762:-->, que es una idea simple e intuitiva de la tendencia central en el mercado y equivale a Bs. <observablehq-loading></observablehq-loading><!--:f6967881:-->.</p>
-<p>El <observablehq-loading></observablehq-loading><!--:61e0de14:-->, que sería una estimación más correcta de la tendencia central ponderando cada precio listado por el monto que se ofrece <observablehq-loading></observablehq-loading><!--:adb395cc:-->.</p>
-<p>Estas opciones son aproximaciones de la tendencia central en el mercado. Pero alguien que quiera comprar o vender dólares probablemente busca valores más extremos. La tercera opción es el <observablehq-loading></observablehq-loading><!--:ce7c2cb0:-->. Este valor representa la cotización de una oferta que se tomaría fácilmente en el mercado <observablehq-loading></observablehq-loading><!--:05c0d78b:-->.</p>
-<p>Puedes utilizar todos estos datos como quieras desde <a href="https://github.com/mauforonda/dolares/" target="_blank" rel="noopener noreferrer">el repositorio</a>, que se actualiza cada 30 minutos, más o menos.</p>
-<p>Por favor sólo utiliza estos números como una referencia.</p>
-</div>
-</details></div><div class="center">🪴</div>
-<div id="creditos">
-    <div class="credito">
-        <span><a href="https://p2p.binance.com/en/trade/all-payments/USDT?fiat=BOB" target="_blank" rel="noopener noreferrer">Binance P2P</a> + <a href="https://www.bcb.gob.bo/" target="_blank" rel="noopener noreferrer">BCB</a></span>
-        <span class="creditoNota">fuentes</span>
-    </div>
-    <div>&amp;</div>
-    <div class="credito">
-        <span><a href="https://mauforonda.github.io" target="_blank" rel="noopener noreferrer">Mauricio Foronda</a></span>
-        <span class="creditoNota">creación</span>
-    </div>
-</div>
-</main>
-</div>
+      </header>
+      <div class="rates">
+        <div class="official-quote">
+          <span class="rate-label official-rate-label"></span>
+          <div class="official-rate">
+            <span class="official-rate__integer"></span>
+            <span class="official-rate__separator">.</span>
+            <span class="official-rate__decimal"></span>
+          </div>
+        </div>
+        <div class="binance-quote">
+          <div class="binance-rate">
+            <span class="binance-rate__integer"></span>
+            <span class="binance-rate__separator">.</span>
+            <span class="binance-rate__decimal"></span>
+          </div>
+          <span class="rate-label binance-rate-label">Binance</span>
+        </div>
+      </div>
+      <fieldset class="timeseries">
+        <legend class="currency-unit">
+          <span class="currency-unit__integer">BS</span>
+          <span class="currency-unit__separator">x</span>
+          <span class="currency-unit__decimal">USD</span>
+        </legend>
+        <exchange-chart
+          aria-label="Tipo de cambio de compra en Binance"
+        ></exchange-chart>
+      </fieldset>
+      <div class="selected-time">
+        <span class="selected-time__date"></span>
+        <span class="selected-time__time"></span>
+      </div>
+      <historical-chart
+        aria-label="Historial completo y selector de rango de fechas"
+      ></historical-chart>
+      <section class="bank-rates-section">
+        <bank-rates aria-label="Diferencia entre la cotización oficial y la venta de los bancos">
+          <div class="bank-rates__header" aria-hidden="true">
+            <span class="bank-rates__title bank-rates__skeleton-title"></span>
+            <span class="bank-rates__date bank-rates__skeleton-date"></span>
+          </div>
+          <div class="plot-container" aria-hidden="true">
+            <div class="bank-rates__skeleton-chart"></div>
+          </div>
+        </bank-rates>
+      </section>
+      <footer class="page-footer">
+        <a href="https://github.com/mauforonda/dolares" target="_blank" rel="noopener noreferrer">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="18" cy="18" r="3" />
+            <circle cx="6" cy="6" r="3" />
+            <path d="M13 6h3a2 2 0 0 1 2 2v7" />
+            <path d="M11 18H8a2 2 0 0 1-2-2V9" />
+          </svg>
+          <span>Datos y Código</span>
+        </a>
+      </footer>
+    </main>
+  </body>
+</html>
