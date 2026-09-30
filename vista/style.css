@@ -1,0 +1,602 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
+
+:root {
+  --background: rgb(250, 250, 250);
+  --surface: #fff;
+  --ink: #383838;
+  --binance: rgb(165 167 155);
+  --official: rgb(248 121 89);
+  --skeleton: color-mix(in srgb, var(--ink) 9%, var(--background));
+
+  --stroke: color-mix(in srgb, var(--ink) 50%, var(--background));
+  --muted: color-mix(in srgb, var(--ink) 45%, var(--background));
+  --line: color-mix(in srgb, var(--ink) 12%, var(--background));
+  --background-soft: color-mix(in srgb, var(--ink) 2%, var(--background));
+
+  --font-small: 400 12px/1.5 Inter, sans-serif;
+  --font-body: 500 14px/1.5 Inter, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #000;
+    --surface: #181818;
+    --ink: #dcdcdc;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--ink);
+  font: var(--font-body);
+}
+
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes content-appear {
+  from {
+    opacity: 0;
+  }
+}
+
+main {
+  --rate-integer-size: 32px;
+  --rate-decimal-size: 27px;
+  --rate-columns: 2ch 0.2ch 2ch;
+  --unit-columns: 2ch 0.5ch 2ch;
+  --rate-column-gap: 0px;
+
+  width: min(100% - 32px, 880px);
+  min-height: 100vh;
+  margin-inline: auto;
+  border-inline: 1px solid var(--line);
+  padding-block: 0;
+
+  .page-header {
+    font: var(--font-small);
+    padding: 10px 20px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+
+    .header-title {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-mark {
+      flex: 0 0 15px;
+      width: 15px;
+      height: 15px;
+      overflow: hidden;
+      border-radius: 100%;
+      background:
+        radial-gradient(
+          ellipse at 72% 42%,
+          rgb(255 133 24 / 90%) 0 13%,
+          transparent 48%
+        ),
+        radial-gradient(
+          ellipse at 16% 20%,
+          rgb(223 104 200 / 88%) 0 20%,
+          transparent 63%
+        ),
+        linear-gradient(
+          115deg,
+          #ef776f 0%,
+          #f2a15c 38%,
+          #f1c842 56%,
+          #d7a0ca 100%
+        );
+    }
+  }
+
+  .rates,
+  .timeseries,
+  .selected-time {
+    margin-inline: 10px;
+  }
+
+  .rates {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: baseline;
+    gap: 20px;
+    margin-block: 0 10px;
+
+    .official-quote,
+    .binance-quote {
+      display: flex;
+      align-items: baseline;
+      gap: 3px;
+    }
+
+    .official-quote {
+      justify-self: end;
+    }
+
+    .binance-quote {
+      justify-self: start;
+    }
+
+    .official-rate,
+    .binance-rate {
+      display: grid;
+      grid-template-columns: var(--rate-columns);
+      width: max-content;
+      align-items: baseline;
+      font-size: var(--rate-integer-size);
+      gap: var(--rate-column-gap);
+
+      .official-rate__integer,
+      .binance-rate__integer {
+        font-size: inherit;
+        font-weight: 600;
+        line-height: 1;
+        text-align: right;
+        white-space: nowrap;
+      }
+
+      .official-rate__decimal,
+      .binance-rate__decimal {
+        font-size: var(--rate-decimal-size);
+        font-weight: 600;
+        line-height: 1;
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      .official-rate__separator,
+      .binance-rate__separator {
+        font-size: 0.5em;
+        justify-self: center;
+      }
+    }
+
+    .official-rate {
+      color: var(--official);
+    }
+
+    .binance-rate {
+      color: var(--binance);
+    }
+
+    .official-rate-label {
+      color: var(--official);
+    }
+
+    .binance-rate-label {
+      color: var(--binance);
+    }
+
+    .rate-label {
+      font: var(--font-small);
+      font-weight: 600;
+      line-height: 1;
+    }
+  }
+
+  .timeseries {
+    width: auto;
+    min-width: 0;
+    margin-block: 0;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 25px;
+    background: var(--background-soft);
+
+    .currency-unit {
+      display: grid;
+      grid-template-columns: var(--unit-columns);
+      gap: var(--rate-column-gap);
+      width: max-content;
+      margin-inline: auto;
+      padding-inline: 0;
+      color: var(--official);
+      font-size: var(--rate-integer-size);
+      line-height: 1;
+      align-items: baseline;
+
+      > span {
+        font: var(--font-small);
+        font-weight: 600;
+        line-height: 1;
+      }
+
+      .currency-unit__integer {
+        text-align: right;
+      }
+
+      .currency-unit__separator {
+        text-align: center;
+        font-size: 10px;
+      }
+
+      .currency-unit__decimal {
+        text-align: left;
+      }
+    }
+  }
+
+  .selected-time {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-block: 8px;
+    text-align: center;
+
+    .selected-time__date {
+      font: var(--font-small);
+      color: var(--ink);
+    }
+
+    .selected-time__time {
+      font-size: 10px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+  }
+
+  .page-footer {
+    margin: 0;
+    padding: 20px 0 10px;
+    background: color-mix(in srgb, var(--ink) 2%, var(--background));
+    color: var(--ink);
+    font: var(--font-small);
+    text-align: center;
+
+    a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: inherit;
+      text-decoration: none;
+
+      svg {
+        width: 16px;
+        height: 16px;
+        color: var(--muted);
+      }
+
+      &:hover {
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+    }
+  }
+}
+
+main[data-state="loading"] {
+  .brand-mark {
+    background: var(--skeleton);
+    animation: skeleton-pulse 1.2s ease-in-out infinite;
+  }
+
+  .text-title {
+    position: relative;
+    color: transparent;
+
+    &::after {
+      position: absolute;
+      inset: 2px 0;
+      border-radius: 3px;
+      background: var(--skeleton);
+      content: "";
+      animation: skeleton-pulse 1.2s ease-in-out infinite;
+    }
+  }
+
+  .rates {
+    .rate-label {
+      position: relative;
+      color: transparent;
+
+      &::after {
+        position: absolute;
+        inset: 0;
+        border-radius: 2px;
+        background: var(--skeleton);
+        content: "";
+        animation: skeleton-pulse 1.2s ease-in-out infinite;
+      }
+    }
+
+    .official-rate-label:empty {
+      display: inline-block;
+      width: 12ch;
+      min-height: 0.8em;
+    }
+
+    .official-rate > span,
+    .binance-rate > span {
+      position: relative;
+      min-height: 1em;
+      color: transparent;
+
+      &::after {
+        position: absolute;
+        inset: 2px 0;
+        border-radius: 2px;
+        background: var(--skeleton);
+        content: "";
+        animation: skeleton-pulse 1.2s ease-in-out infinite;
+      }
+    }
+  }
+
+  .currency-unit > span {
+    position: relative;
+    color: transparent;
+
+    &::after {
+      position: absolute;
+      inset: 1px 0;
+      border-radius: 2px;
+      background: var(--skeleton);
+      content: "";
+      animation: skeleton-pulse 1.2s ease-in-out infinite;
+    }
+  }
+
+  .selected-time {
+    > span {
+      position: relative;
+      color: transparent;
+      font-size: 0;
+
+      &::after {
+        display: block;
+        border-radius: 2px;
+        background: var(--skeleton);
+        content: "";
+        animation: skeleton-pulse 1.2s ease-in-out infinite;
+      }
+    }
+
+    .selected-time__date::after {
+      width: 144px;
+      height: 18px;
+    }
+
+    .selected-time__time::after {
+      width: 40px;
+      height: 15px;
+    }
+  }
+
+  exchange-chart::before,
+  historical-chart::before {
+    opacity: 1;
+    animation: skeleton-pulse 1.2s ease-in-out infinite;
+  }
+
+  .bank-rates-section bank-rates {
+    --bank-row-height: 24px;
+    --skeleton-bank-count: 11;
+
+    .bank-rates__skeleton-title,
+    .bank-rates__skeleton-date {
+      display: block;
+      height: 9px;
+      border-radius: 2px;
+      background: var(--skeleton);
+      animation: skeleton-pulse 1.2s ease-in-out infinite;
+    }
+
+    .bank-rates__skeleton-title {
+      width: 180px;
+    }
+
+    .bank-rates__skeleton-date {
+      width: 52px;
+    }
+
+    .bank-rates__skeleton-chart {
+      height: calc(var(--skeleton-bank-count) * var(--bank-row-height));
+      background:
+        repeating-linear-gradient(
+            to bottom,
+            var(--skeleton) 0 8px,
+            transparent 8px var(--bank-row-height)
+          )
+          8px 7px / 28px var(--bank-row-height) repeat-y,
+        repeating-linear-gradient(
+            to bottom,
+            var(--skeleton) 0 8px,
+            transparent 8px var(--bank-row-height)
+          )
+          48px 7px / 130px var(--bank-row-height) repeat-y,
+        repeating-linear-gradient(
+            to bottom,
+            var(--skeleton) 0 2px,
+            transparent 2px var(--bank-row-height)
+          )
+          42px 21px / 75% var(--bank-row-height) repeat-y;
+      animation: skeleton-pulse 1.2s ease-in-out infinite;
+    }
+  }
+}
+
+main[data-state="ready"] {
+  animation: content-appear 300ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main[data-state="loading"] * {
+    animation: none !important;
+  }
+}
+
+exchange-chart {
+  display: block;
+  min-width: 0;
+  margin: 15px 10px 10px;
+  --plot-height: 400px;
+  position: relative;
+  min-height: calc(var(--plot-height) + 2px);
+
+  &::before {
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--line);
+    border-radius: 17px;
+    background: var(--skeleton);
+    box-shadow:
+      0 4px 6px -1px var(--line),
+      0 2px 4px -2px var(--line);
+    content: "";
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 250ms ease;
+  }
+
+  .plot-container {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 17px;
+    box-shadow:
+      0 4px 6px -1px var(--line),
+      0 2px 4px -2px var(--line);
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    color: var(--muted);
+    font: var(--font-small);
+    touch-action: pan-y pinch-zoom;
+  }
+}
+
+.bank-rates-section {
+  margin-top: 10px;
+  border-top: 1px solid var(--line);
+  background: var(--background-soft);
+
+  bank-rates {
+    margin: 20px auto 0;
+    background: var(--background);
+  }
+}
+
+bank-rates {
+  display: block;
+  width: min(100% - 20px, 600px);
+  min-width: 0;
+  --bank-row-height: 24px;
+  border: 1px solid var(--line);
+  padding: 10px 0 0 0;
+  border-radius: 14px;
+
+  .bank-rates__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 28px;
+    color: var(--ink);
+    padding: 0 20px 10px 20px;
+
+    > span {
+      white-space: nowrap;
+    }
+  }
+
+  .bank-rates__title {
+    font: var(--font-small);
+    line-height: 1;
+  }
+
+  .bank-rates__date {
+    font:
+      400 10px/1 system-ui,
+      sans-serif;
+  }
+
+  .plot-container {
+    width: 100%;
+    border-top: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+    padding: 10px;
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+}
+
+historical-chart {
+  display: block;
+  min-width: 0;
+  margin-inline: 10px;
+  --plot-height: 160px;
+  position: relative;
+  min-height: var(--plot-height);
+
+  &::before {
+    position: absolute;
+    inset: 0;
+    border-radius: 4px;
+    background: var(--skeleton);
+    content: "";
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 250ms ease;
+  }
+
+  .plot-container {
+    width: 100%;
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    color: var(--muted);
+    font: var(--font-small);
+  }
+}
+
+@media (max-width: 600px) {
+  exchange-chart {
+    --plot-height: 350px;
+  }
+
+  exchange-chart svg .x-axis text,
+  exchange-chart svg .y-axis text,
+  historical-chart svg .x-axis text,
+  historical-chart svg .y-axis text {
+    font-size: 10px;
+  }
+}
+
+.historical-brush {
+  .selection {
+    fill: none;
+    stroke: none;
+    pointer-events: all;
+  }
+
+  .handle {
+    fill: var(--line);
+  }
+}
+
+.historical-brush-selection {
+  fill: var(--surface);
+  pointer-events: none;
+}

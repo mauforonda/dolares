@@ -1,37 +1,40 @@
 name: Publicar página
+
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "vista/**"
+      - ".github/workflows/publish.yml"
   workflow_dispatch:
+
+concurrency:
+  group: gh-pages-publish
+  cancel-in-progress: false
+
+permissions:
+  contents: write
 
 jobs:
   publish:
-    name: publish
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@master
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: setup docs
-      run: |
-        mkdir -p docs
-        touch docs/.nojekyll
+      - name: Prepare static site
+        run: |
+          mkdir -p public
+          cp -a vista/. public/
+          rm public/desarrollar.py
+          touch public/.nojekyll
 
-    - name: setup node
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
-        cache: "npm"
-        cache-dependency-path: ./view/package-lock.json
-
-    - name: dependencias
-      working-directory: ./view
-      run: npm ci
-
-    - name: build
-      working-directory: ./view
-      run: npm run build
-
-    - name: publicar
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./docs
+      - name: Publish to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./public
+          user_name: github-actions[bot]
+          user_email: 41898282+github-actions[bot]@users.noreply.github.com

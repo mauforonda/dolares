@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="theme-color" content="rgb(250, 250, 250)"/>
+    <title>Dólar en Bolivia</title>
+    <link rel="icon" type="image/svg+xml" href="https://mauforonda.github.io/images/icon.svg"/>
+    <link rel="stylesheet" href="style.css"/>
+    <script type="importmap">
+      {
+        "imports": {
+          "@observablehq/plot": "https://esm.sh/@observablehq/plot@0.6.17",
+          "d3": "https://esm.sh/d3@7.9.0"
+        }
+      }
+    </script>
+    <script type="module" src="app.js"></script>
+  </head>
+  <body>
+    <main data-state="loading" aria-busy="true">
+      <header class="page-header">
+        <div class="header-title">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span class="text-title">Dólar en Bolivia</span>
+        </div>
+      </header>
+      <div class="rates">
+        <div class="official-quote">
+          <span class="rate-label official-rate-label"></span>
+          <div class="official-rate">
+            <span class="official-rate__integer"></span>
+            <span class="official-rate__separator">.</span>
+            <span class="official-rate__decimal"></span>
+          </div>
+        </div>
+        <div class="binance-quote">
+          <div class="binance-rate">
+            <span class="binance-rate__integer"></span>
+            <span class="binance-rate__separator">.</span>
+            <span class="binance-rate__decimal"></span>
+          </div>
+          <span class="rate-label binance-rate-label">Binance</span>
+        </div>
+      </div>
+      <fieldset class="timeseries">
+        <legend class="currency-unit">
+          <span class="currency-unit__integer">BS</span>
+          <span class="currency-unit__separator">x</span>
+          <span class="currency-unit__decimal">USD</span>
+        </legend>
+        <exchange-chart
+          aria-label="Tipo de cambio de compra en Binance"
+        ></exchange-chart>
+      </fieldset>
+      <div class="selected-time">
+        <span class="selected-time__date"></span>
+        <span class="selected-time__time"></span>
+      </div>
+      <historical-chart
+        aria-label="Historial completo y selector de rango de fechas"
+      ></historical-chart>
+      <section class="bank-rates-section">
+        <bank-rates aria-label="Diferencia entre la cotización oficial y la venta de los bancos">
+          <div class="bank-rates__header" aria-hidden="true">
+            <span class="bank-rates__title bank-rates__skeleton-title"></span>
+            <span class="bank-rates__date bank-rates__skeleton-date"></span>
+          </div>
+          <div class="plot-container" aria-hidden="true">
+            <div class="bank-rates__skeleton-chart"></div>
+          </div>
+        </bank-rates>
+      </section>
+      <footer class="page-footer">
+        <a href="https://github.com/mauforonda/dolares" target="_blank" rel="noopener noreferrer">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="18" cy="18" r="3" />
+            <circle cx="6" cy="6" r="3" />
+            <path d="M13 6h3a2 2 0 0 1 2 2v7" />
+            <path d="M11 18H8a2 2 0 0 1-2-2V9" />
+          </svg>
+          <span>Datos y Código</span>
+        </a>
+      </footer>
+    </main>
+  </body>
+</html>
