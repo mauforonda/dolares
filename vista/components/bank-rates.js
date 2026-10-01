@@ -148,7 +148,7 @@ function addBinanceGradient(plot) {
   );
 }
 
-function addDistributionActivation(plot, firstRate) {
+function addDistributionActivation(plot, startRate) {
   const area = plot.querySelector(`.${DISTRIBUTION_AREA_CLASS}`);
   const line = plot.querySelector(`.${DISTRIBUTION_LINE_CLASS}`);
   const activeArea = area.cloneNode(true);
@@ -160,7 +160,7 @@ function addDistributionActivation(plot, firstRate) {
     "afterbegin",
     `<defs>
       <clipPath id="${ACTIVE_AREA_CLIP_ID}" clipPathUnits="userSpaceOnUse">
-        <rect x="${x(firstRate)}" y="0" width="0" height="${height}" />
+        <rect x="${x(startRate)}" y="0" width="0" height="${height}" />
       </clipPath>
     </defs>`,
   );
@@ -180,7 +180,11 @@ function addDistributionActivation(plot, firstRate) {
 
   const clip = plot.querySelector(`#${ACTIVE_AREA_CLIP_ID} rect`);
   return (quote) => {
-    const width = quote ? Math.max(0, x(Number(quote)) - x(firstRate)) : 0;
+    if (quote == null) return;
+    const startX = x(startRate);
+    const selectedX = x(Number(quote));
+    const width = Math.abs(selectedX - startX);
+    clip.setAttribute("x", Math.min(startX, selectedX));
     clip.setAttribute("width", width);
   };
 }
@@ -209,14 +213,14 @@ function setQuoteAsDefault(plot, quote) {
   );
 }
 
-function createDistributionPlot(width, height, counts, xDomain, maxCount) {
+function createDistributionPlot(width, height, counts, xDomain, maxCount, margins) {
   return Plot.plot({
     width,
     height,
-    marginTop: DISTRIBUTION_MARGINS.top,
-    marginRight: DISTRIBUTION_MARGINS.right,
-    marginBottom: DISTRIBUTION_MARGINS.bottom,
-    marginLeft: DISTRIBUTION_MARGINS.left,
+    marginTop: margins.top,
+    marginRight: margins.right,
+    marginBottom: margins.bottom,
+    marginLeft: margins.left,
     x: { axis: null, domain: xDomain },
     y: { axis: null, domain: [0, maxCount] },
     marks: [
@@ -252,13 +256,13 @@ function createDistributionPlot(width, height, counts, xDomain, maxCount) {
   });
 }
 
-function createRatesPlot(width, height, rates, banks, officialRate, xDomain) {
+function createRatesPlot(width, height, rates, banks, officialRate, xDomain, margins, isPurchase) {
   const rateLabel = {
     x: officialRate,
     y: "bank",
     text: (rate) => rate.value.toFixed(2),
-    dx: -6,
-    textAnchor: "end",
+    dx: isPurchase ? 6 : -6,
+    textAnchor: isPurchase ? "start" : "end",
     fontSize: 10,
     fill: "var(--ink)",
   };
@@ -266,8 +270,8 @@ function createRatesPlot(width, height, rates, banks, officialRate, xDomain) {
     x: officialRate,
     y: "bank",
     text: (rate) => BANK_NAMES[rate.bank],
-    dx: 6,
-    textAnchor: "start",
+    dx: isPurchase ? -6 : 6,
+    textAnchor: isPurchase ? "end" : "start",
     fontSize: 12,
     fill: "var(--ink)",
   };
@@ -275,10 +279,10 @@ function createRatesPlot(width, height, rates, banks, officialRate, xDomain) {
   return Plot.plot({
     width,
     height,
-    marginTop: PLOT_MARGINS.top,
-    marginRight: PLOT_MARGINS.right,
-    marginBottom: PLOT_MARGINS.bottom,
-    marginLeft: PLOT_MARGINS.left,
+    marginTop: margins.top,
+    marginRight: margins.right,
+    marginBottom: margins.bottom,
+    marginLeft: margins.left,
     x: {
       axis: null,
       domain: xDomain,
@@ -339,30 +343,49 @@ function createRatesPlot(width, height, rates, banks, officialRate, xDomain) {
 }
 
 export function mount(element, { bankRates, officialRates }) {
-  const date = bankRates[0].date;
-  const relativeDate = formatRelativeDate(date);
-  const officialRate = officialRates.find((rate) => rate.date === date).value;
-  const rates = bankRates.toSorted((a, b) => a.value - b.value);
-  const banks = rates.map((rate) => rate.bank);
-  const maxRate = rates.at(-1).value;
-  const xDomain = [Math.min(officialRate, rates[0].value), maxRate];
-  const { banksByQuote, counts: rateCounts } = groupRates(rates);
-  const maxCount = Math.max(...rateCounts.map(({ count }) => count));
-  const defaultQuote = rateCounts.reduce((mostFrequent, count) =>
-    count.count > mostFrequent.count ? count : mostFrequent,
-  ).quote;
   const rowHeight = Number.parseFloat(
     getComputedStyle(element).getPropertyValue("--bank-row-height"),
   );
-  const height = banks.length * rowHeight;
   const distributionHeight = Number.parseFloat(
     getComputedStyle(element).getPropertyValue("--bank-distribution-height"),
   );
   let width = 0;
   let disposed = false;
+  let selectedType = "venta";
 
   function render() {
     if (!width || disposed) return;
+
+    const isPurchase = selectedType === "compra";
+    const currentBankRates = bankRates[selectedType];
+    const date = currentBankRates[0].date;
+    const relativeDate = formatRelativeDate(date);
+    const officialRate = officialRates.find((rate) => rate.date === date).value;
+    const rates = currentBankRates.toSorted((a, b) =>
+      isPurchase ? b.value - a.value : a.value - b.value,
+    );
+    const banks = rates.map((rate) => rate.bank);
+    const rateValues = rates.map((rate) => rate.value);
+    const minRate = Math.min(officialRate, ...rateValues);
+    const maxRate = Math.max(officialRate, ...rateValues);
+    const gradientEndRate = rates.at(-1).value;
+    const xDomain = [minRate, maxRate];
+    const { banksByQuote, counts: rateCounts } = groupRates(rates);
+    const maxCount = Math.max(...rateCounts.map(({ count }) => count));
+    const defaultQuote = rateCounts.reduce((mostFrequent, count) =>
+      count.count > mostFrequent.count ? count : mostFrequent,
+    ).quote;
+    const height = banks.length * rowHeight;
+    const plotMargins = isPurchase
+      ? { ...PLOT_MARGINS, left: PLOT_MARGINS.right, right: PLOT_MARGINS.left }
+      : PLOT_MARGINS;
+    const distributionMargins = isPurchase
+      ? {
+          ...DISTRIBUTION_MARGINS,
+          left: DISTRIBUTION_MARGINS.right,
+          right: DISTRIBUTION_MARGINS.left,
+        }
+      : DISTRIBUTION_MARGINS;
 
     const distributionPlot = createDistributionPlot(
       width,
@@ -370,17 +393,18 @@ export function mount(element, { bankRates, officialRates }) {
       rateCounts,
       xDomain,
       maxCount,
+      distributionMargins,
     );
     addBinanceGradient(distributionPlot);
     addRateGradient(
       distributionPlot,
       officialRate,
-      maxRate,
+      gradientEndRate,
       DISTRIBUTION_LINE_GRADIENT_ID,
     );
     const updateActiveArea = addDistributionActivation(
       distributionPlot,
-      rateCounts[0].rate,
+      isPurchase ? rateCounts.at(-1).rate : rateCounts[0].rate,
     );
     const ratesPlot = createRatesPlot(
       width,
@@ -389,8 +413,10 @@ export function mount(element, { bankRates, officialRates }) {
       banks,
       officialRate,
       xDomain,
+      plotMargins,
+      isPurchase,
     );
-    addRateGradient(ratesPlot, officialRate, maxRate, GRADIENT_ID);
+    addRateGradient(ratesPlot, officialRate, gradientEndRate, GRADIENT_ID);
     const updateQuoteGuide = addQuoteGuides(ratesPlot, banksByQuote);
 
     element.innerHTML = `
@@ -407,10 +433,27 @@ export function mount(element, { bankRates, officialRates }) {
         </div>
       </div>
       <div class="bank-rates__header">
-        <span class="bank-rates__title">Cotizaciones de venta por banco</span>
+        <span class="bank-rates__title">
+          <span>Cotizaciones de</span>
+          <span class="bank-rates__switch" role="radiogroup" aria-label="Tipo de cotización">
+            <label>
+              <input type="radio" name="bank-rate-type" value="compra" ${isPurchase ? "checked" : ""} />
+              <span>compra</span>
+            </label>
+            <label>
+              <input type="radio" name="bank-rate-type" value="venta" ${isPurchase ? "" : "checked"} />
+              <span>venta</span>
+            </label>
+          </span>
+          <span>por banco</span>
+        </span>
         <span class="bank-rates__date">${relativeDate}</span>
       </div>
       <div class="plot-container"></div>`;
+    element.setAttribute(
+      "aria-label",
+      `Diferencia entre el tipo de cambio oficial y las cotizaciones de ${selectedType} de los bancos`,
+    );
     const plotContainer = element.querySelector(".plot-container");
     plotContainer.append(distributionPlot, ratesPlot);
 
@@ -429,7 +472,10 @@ export function mount(element, { bankRates, officialRates }) {
       const [integer, decimal] = Number(quote).toFixed(2).split(".");
       const position = Math.min(
         1,
-        Math.max(0, (Number(quote) - officialRate) / (maxRate - officialRate)),
+        Math.max(
+          0,
+          (Number(quote) - officialRate) / (gradientEndRate - officialRate),
+        ),
       );
       const binanceShare = Number.isFinite(position) ? position * 100 : 100;
       selectedRateInteger.textContent = integer;
@@ -450,6 +496,11 @@ export function mount(element, { bankRates, officialRates }) {
     distributionPlot.addEventListener("input", () =>
       setActiveQuote(distributionPlot.value?.rate?.toFixed(2) ?? null),
     );
+    element.querySelector(".bank-rates__switch").addEventListener("change", (event) => {
+      if (!event.target.checked || event.target.value === selectedType) return;
+      selectedType = event.target.value;
+      render();
+    });
 
     keepSelectionOnPointerLeave(distributionPlot);
     keepSelectionOnPointerLeave(ratesPlot);
