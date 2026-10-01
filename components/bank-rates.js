@@ -10,12 +10,37 @@ const BANK_NAMES = {
   banco_ganadero: "Banco Ganadero",
   banco_mercantil_santa_cruz: "Banco Mercantil Santa Cruz",
   banco_pyme_de_la_comunidad: "Banco PyME de la Comunidad",
-  banco_solidario: "Banco Solidario",
+  banco_solidario: "BancoSol",
   banco_union: "Banco Unión",
+  banco_prodem: "Banco PRODEM",
+  banco_nacional_de_bolivia: "Banco Nacional de Bolivia"
 };
+
+function formatRelativeDate(date) {
+  const today = Object.fromEntries(
+    new Intl.DateTimeFormat("en", {
+      timeZone: "America/La_Paz",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    })
+      .formatToParts(new Date())
+      .map(({ type, value }) => [type, value]),
+  );
+  const todayKey = `${today.year}-${today.month}-${today.day}`;
+  const daysAgo =
+    (Date.parse(`${todayKey}T00:00:00Z`) -
+      Date.parse(`${date}T00:00:00Z`)) /
+    86_400_000;
+
+  if (daysAgo === 0) return "hoy";
+  if (daysAgo === 1) return "ayer";
+  return `hace ${daysAgo} días`;
+}
 
 export function mount(element, { bankRates, officialRates }) {
   const date = bankRates[0].date;
+  const relativeDate = formatRelativeDate(date);
   const officialRate = officialRates.find((rate) => rate.date === date).value;
   const rates = bankRates.toSorted((a, b) => a.value - b.value);
   const maxRate = rates.at(-1).value;
@@ -39,7 +64,7 @@ export function mount(element, { bankRates, officialRates }) {
     text: (rate) => BANK_NAMES[rate.bank],
     dx: 6,
     textAnchor: "start",
-    fontSize: 10,
+    fontSize: 12,
     fill: "var(--ink)",
   };
   let width = 0;
@@ -77,7 +102,7 @@ export function mount(element, { bankRates, officialRates }) {
             x: "rate",
             y1: "topBank",
             y2: "bottomBank",
-            dy: 10,
+            dy: 12,
             stroke: "var(--official)",
             strokeDasharray: "2,2",
           },
@@ -126,7 +151,7 @@ export function mount(element, { bankRates, officialRates }) {
     element.innerHTML = `
       <div class="bank-rates__header">
         <span class="bank-rates__title">Cotizaciones de venta por banco</span>
-        <span class="bank-rates__date">${date}</span>
+        <span class="bank-rates__date">${relativeDate}</span>
       </div>
       <div class="plot-container"></div>`;
     element.querySelector(".plot-container").append(plot);

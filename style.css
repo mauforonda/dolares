@@ -381,7 +381,7 @@ main[data-state="loading"] {
   }
 
   .bank-rates-section bank-rates {
-    --bank-row-height: 24px;
+    --bank-row-height: 28px;
     --skeleton-bank-count: 11;
 
     .bank-rates__skeleton-title,
