@@ -9,46 +9,250 @@ const BANK_NAMES = {
   banco_fortaleza: "Banco Fortaleza",
   banco_ganadero: "Banco Ganadero",
   banco_mercantil_santa_cruz: "Banco Mercantil Santa Cruz",
+  banco_nacional_de_bolivia: "Banco Nacional de Bolivia",
+  banco_prodem: "Banco PRODEM",
   banco_pyme_de_la_comunidad: "Banco PyME de la Comunidad",
   banco_solidario: "BancoSol",
   banco_union: "Banco Unión",
-  banco_prodem: "Banco PRODEM",
-  banco_nacional_de_bolivia: "Banco Nacional de Bolivia"
 };
 
+const GRADIENT_ID = "bank-rate-gradient";
+const DISTRIBUTION_GRADIENT_ID = "bank-rate-distribution-gradient";
+const DISTRIBUTION_LINE_GRADIENT_ID = "bank-rate-distribution-line-gradient";
+const DISTRIBUTION_AREA_CLASS = "bank-rates__distribution-area";
+const DISTRIBUTION_LINE_CLASS = "bank-rates__distribution-line";
+const ACTIVE_AREA_CLIP_ID = "bank-rates-active-area-clip";
+const DAY_MS = 24 * 60 * 60 * 1000;
+const PLOT_MARGINS = { top: 0, right: 10, bottom: 5, left: 42 };
+const DISTRIBUTION_MARGINS = { top: 5, right: 10, bottom: 0, left: 42 };
+
 function formatRelativeDate(date) {
+  const todayParts = new Intl.DateTimeFormat("en", {
+    timeZone: "America/La_Paz",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
   const today = Object.fromEntries(
-    new Intl.DateTimeFormat("en", {
-      timeZone: "America/La_Paz",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    })
-      .formatToParts(new Date())
-      .map(({ type, value }) => [type, value]),
+    todayParts.map(({ type, value }) => [type, value]),
   );
   const todayKey = `${today.year}-${today.month}-${today.day}`;
   const daysAgo =
-    (Date.parse(`${todayKey}T00:00:00Z`) -
-      Date.parse(`${date}T00:00:00Z`)) /
-    86_400_000;
+    (Date.parse(`${todayKey}T00:00:00Z`) - Date.parse(`${date}T00:00:00Z`)) /
+    DAY_MS;
 
   if (daysAgo === 0) return "hoy";
   if (daysAgo === 1) return "ayer";
   return `hace ${daysAgo} días`;
 }
 
-export function mount(element, { bankRates, officialRates }) {
-  const date = bankRates[0].date;
-  const relativeDate = formatRelativeDate(date);
-  const officialRate = officialRates.find((rate) => rate.date === date).value;
-  const rates = bankRates.toSorted((a, b) => a.value - b.value);
-  const maxRate = rates.at(-1).value;
-  const banks = rates.map((rate) => rate.bank);
-  const rowHeight = Number.parseFloat(
-    getComputedStyle(element).getPropertyValue("--bank-row-height"),
+function labelMark(rates, options, idleOpacity, className) {
+  return Plot.text(rates, {
+    ...options,
+    opacity: idleOpacity,
+    className,
+  });
+}
+
+function markTextElements(plot, className) {
+  const mark = plot.querySelector(`.${className}`);
+  return mark.matches("text") ? [mark] : [...mark.querySelectorAll("text")];
+}
+
+function updateLabelOpacities(quote, rates, banksByQuote, rateLabels, bankLabels) {
+  const selectedBanks = new Set(banksByQuote.get(quote) ?? []);
+
+  rates.forEach((rate, index) => {
+    const selected = selectedBanks.has(rate.bank);
+    rateLabels[index].setAttribute("opacity", selected ? 1 : 0.3);
+    bankLabels[index].setAttribute("opacity", selected ? 1 : 0.5);
+  });
+}
+
+function groupRates(rates) {
+  const banksByQuote = new Map();
+
+  rates.forEach(({ bank, value }) => {
+    const quote = value.toFixed(2);
+    const banks = banksByQuote.get(quote) ?? [];
+    banks.push(bank);
+    banksByQuote.set(quote, banks);
+  });
+
+  const counts = [...banksByQuote]
+    .map(([quote, banks]) => ({ quote, rate: Number(quote), count: banks.length }))
+    .sort((a, b) => a.rate - b.rate);
+
+  return { banksByQuote, counts };
+}
+
+function addRateGradient(plot, officialRate, maxRate, gradientId) {
+  const x = plot.scale("x").apply;
+  plot.insertAdjacentHTML(
+    "afterbegin",
+    `<defs>
+      <linearGradient
+        id="${gradientId}"
+        gradientUnits="userSpaceOnUse"
+        x1="${x(officialRate)}"
+        y1="0"
+        x2="${x(maxRate)}"
+        y2="0"
+      >
+        <stop offset="0%" stop-color="var(--official)" />
+        <stop offset="100%" stop-color="var(--binance)" />
+      </linearGradient>
+    </defs>`,
   );
-  const height = banks.length * rowHeight;
+}
+
+function addQuoteGuides(plot, banksByQuote) {
+  const x = plot.scale("x").apply;
+  const y = plot.scale("y").apply;
+  const guides = [...banksByQuote].map(([quote, banks]) => ({
+    quote,
+    x: x(Number(quote)),
+    y: y(banks.at(-1)) + 10,
+  }));
+  const defs = plot.querySelector("defs");
+  const linesMarkup = guides
+    .map(
+      ({ quote, x: xPosition, y: yPosition }) =>
+        `<line data-quote="${quote}" x1="${xPosition}" x2="${xPosition}" y1="0" y2="${yPosition}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="2 3" opacity="0" />`,
+    )
+    .join("");
+  defs.insertAdjacentHTML(
+    "afterend",
+    `<g class="bank-rates__quote-guides" pointer-events="none">${linesMarkup}</g>`,
+  );
+  const group = plot.querySelector(".bank-rates__quote-guides");
+  const lines = new Map(
+    [...group.querySelectorAll("line")].map((line) => [line.dataset.quote, line]),
+  );
+  return (quote) => {
+    lines.forEach((line, lineQuote) => {
+      line.setAttribute("opacity", lineQuote === quote ? 0.65 : 0);
+    });
+  };
+}
+
+function addBinanceGradient(plot) {
+  plot.insertAdjacentHTML(
+    "afterbegin",
+    `<defs>
+      <linearGradient id="${DISTRIBUTION_GRADIENT_ID}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--binance)" />
+        <stop offset="100%" stop-color="var(--background)" />
+      </linearGradient>
+    </defs>`,
+  );
+}
+
+function addDistributionActivation(plot, firstRate) {
+  const area = plot.querySelector(`.${DISTRIBUTION_AREA_CLASS}`);
+  const line = plot.querySelector(`.${DISTRIBUTION_LINE_CLASS}`);
+  const activeArea = area.cloneNode(true);
+  const activeLine = line.cloneNode(true);
+  const { height } = plot.viewBox.baseVal;
+  const x = plot.scale("x").apply;
+
+  plot.insertAdjacentHTML(
+    "afterbegin",
+    `<defs>
+      <clipPath id="${ACTIVE_AREA_CLIP_ID}" clipPathUnits="userSpaceOnUse">
+        <rect x="${x(firstRate)}" y="0" width="0" height="${height}" />
+      </clipPath>
+    </defs>`,
+  );
+  activeArea.setAttribute("clip-path", `url(#${ACTIVE_AREA_CLIP_ID})`);
+  activeArea.setAttribute("pointer-events", "none");
+  const activePaths = activeArea.matches("path")
+    ? [activeArea]
+    : [...activeArea.querySelectorAll("path")];
+  activePaths.forEach((path) => path.setAttribute("fill-opacity", "0.5"));
+  activeLine.setAttribute("clip-path", `url(#${ACTIVE_AREA_CLIP_ID})`);
+  activeLine.setAttribute("pointer-events", "none");
+  const activeLines = activeLine.matches("path")
+    ? [activeLine]
+    : [...activeLine.querySelectorAll("path")];
+  activeLines.forEach((path) => path.setAttribute("stroke-opacity", "0.5"));
+  plot.append(activeArea, activeLine);
+
+  const clip = plot.querySelector(`#${ACTIVE_AREA_CLIP_ID} rect`);
+  return (quote) => {
+    const width = quote ? Math.max(0, x(Number(quote)) - x(firstRate)) : 0;
+    clip.setAttribute("width", width);
+  };
+}
+
+function keepSelectionOnPointerLeave(plot) {
+  plot.addEventListener(
+    "pointerleave",
+    (event) => event.stopImmediatePropagation(),
+    { capture: true },
+  );
+}
+
+function setQuoteAsDefault(plot, quote) {
+  const x = plot.scale("x").apply(Number(quote));
+  const bounds = plot.getBoundingClientRect();
+  const viewBox = plot.viewBox.baseVal;
+
+  plot.dispatchEvent(
+    new PointerEvent("pointermove", {
+      clientX: bounds.left + (x / viewBox.width) * bounds.width,
+      clientY: bounds.top + bounds.height / 2,
+      pointerId: 1,
+      pointerType: "mouse",
+      isPrimary: true,
+    }),
+  );
+}
+
+function createDistributionPlot(width, height, counts, xDomain, maxCount) {
+  return Plot.plot({
+    width,
+    height,
+    marginTop: DISTRIBUTION_MARGINS.top,
+    marginRight: DISTRIBUTION_MARGINS.right,
+    marginBottom: DISTRIBUTION_MARGINS.bottom,
+    marginLeft: DISTRIBUTION_MARGINS.left,
+    x: { axis: null, domain: xDomain },
+    y: { axis: null, domain: [0, maxCount] },
+    marks: [
+      Plot.areaY(counts, {
+        x: "rate",
+        y: "count",
+        curve: "natural",
+        fill: `url(#${DISTRIBUTION_GRADIENT_ID})`,
+        fillOpacity: .2,
+        className: DISTRIBUTION_AREA_CLASS,
+      }),
+      Plot.line(counts, {
+        x: "rate",
+        y: "count",
+        curve: "natural",
+        stroke: `url(#${DISTRIBUTION_LINE_GRADIENT_ID})`,
+        strokeWidth: 1,
+        strokeOpacity: 0.2,
+        className: DISTRIBUTION_LINE_CLASS,
+      }),
+      Plot.dot(
+        counts,
+        Plot.pointerX({
+          maxRadius: Infinity,
+          x: "rate",
+          y: "count",
+          r: 0,
+          fillOpacity: 0,
+          strokeOpacity: 0,
+        }),
+      ),
+    ],
+  });
+}
+
+function createRatesPlot(width, height, rates, banks, officialRate, xDomain) {
   const rateLabel = {
     x: officialRate,
     y: "bank",
@@ -67,118 +271,189 @@ export function mount(element, { bankRates, officialRates }) {
     fontSize: 12,
     fill: "var(--ink)",
   };
+
+  return Plot.plot({
+    width,
+    height,
+    marginTop: PLOT_MARGINS.top,
+    marginRight: PLOT_MARGINS.right,
+    marginBottom: PLOT_MARGINS.bottom,
+    marginLeft: PLOT_MARGINS.left,
+    x: {
+      axis: null,
+      domain: xDomain,
+    },
+    y: {
+      axis: null,
+      domain: banks,
+      padding: 0.5,
+    },
+    marks: [
+      Plot.ruleX(
+        [
+          {
+            rate: officialRate,
+            topBank: banks[0],
+            bottomBank: banks.at(-1),
+          },
+        ],
+        {
+          x: "rate",
+          y1: "topBank",
+          y2: "bottomBank",
+          dy: 12,
+          stroke: "var(--official)",
+          strokeDasharray: "2,2",
+        },
+      ),
+      Plot.ruleY(rates, {
+        y: "bank",
+        x1: officialRate,
+        x2: "value",
+        stroke: `url(#${GRADIENT_ID})`,
+        strokeWidth: 2,
+        strokeOpacity: 0.5,
+        dy: 10,
+      }),
+      Plot.dot(rates, {
+        x: "value",
+        y: "bank",
+        dy: 10,
+        r: 2.5,
+        fill: "var(--binance)",
+      }),
+      Plot.dot(
+        rates,
+        Plot.pointerY({
+          x: "value",
+          y: "bank",
+          r: 0,
+          fillOpacity: 0,
+          strokeOpacity: 0,
+        }),
+      ),
+      labelMark(rates, rateLabel, 0.3, "bank-rates__rate-labels"),
+      labelMark(rates, bankLabel, 0.5, "bank-rates__bank-labels"),
+    ],
+  });
+}
+
+export function mount(element, { bankRates, officialRates }) {
+  const date = bankRates[0].date;
+  const relativeDate = formatRelativeDate(date);
+  const officialRate = officialRates.find((rate) => rate.date === date).value;
+  const rates = bankRates.toSorted((a, b) => a.value - b.value);
+  const banks = rates.map((rate) => rate.bank);
+  const maxRate = rates.at(-1).value;
+  const xDomain = [Math.min(officialRate, rates[0].value), maxRate];
+  const { banksByQuote, counts: rateCounts } = groupRates(rates);
+  const maxCount = Math.max(...rateCounts.map(({ count }) => count));
+  const defaultQuote = rateCounts.reduce((mostFrequent, count) =>
+    count.count > mostFrequent.count ? count : mostFrequent,
+  ).quote;
+  const rowHeight = Number.parseFloat(
+    getComputedStyle(element).getPropertyValue("--bank-row-height"),
+  );
+  const height = banks.length * rowHeight;
+  const distributionHeight = Number.parseFloat(
+    getComputedStyle(element).getPropertyValue("--bank-distribution-height"),
+  );
   let width = 0;
   let disposed = false;
 
   function render() {
     if (!width || disposed) return;
 
-    const plot = Plot.plot({
+    const distributionPlot = createDistributionPlot(
+      width,
+      distributionHeight,
+      rateCounts,
+      xDomain,
+      maxCount,
+    );
+    addBinanceGradient(distributionPlot);
+    addRateGradient(
+      distributionPlot,
+      officialRate,
+      maxRate,
+      DISTRIBUTION_LINE_GRADIENT_ID,
+    );
+    const updateActiveArea = addDistributionActivation(
+      distributionPlot,
+      rateCounts[0].rate,
+    );
+    const ratesPlot = createRatesPlot(
       width,
       height,
-      marginBottom: 5,
-      marginLeft: 42,
-      marginRight: 10,
-      marginTop: 0,
-      x: {
-        axis: null,
-        domain: [Math.min(officialRate, rates[0].value), maxRate],
-      },
-      y: {
-        axis: null,
-        domain: banks,
-        padding: 0.5,
-      },
-      marks: [
-        Plot.ruleX(
-          [
-            {
-              rate: officialRate,
-              topBank: banks[0],
-              bottomBank: banks.at(-1),
-            },
-          ],
-          {
-            x: "rate",
-            y1: "topBank",
-            y2: "bottomBank",
-            dy: 12,
-            stroke: "var(--official)",
-            strokeDasharray: "2,2",
-          },
-        ),
-        Plot.ruleY(rates, {
-          y: "bank",
-          x1: officialRate,
-          x2: "value",
-          stroke: "url(#bank-rate-gradient)",
-          strokeWidth: 2,
-          strokeOpacity: 0.5,
-          dy: 10,
-        }),
-        Plot.dot(rates, {
-          x: "value",
-          y: "bank",
-          dy: 10,
-          r: 2.5,
-          fill: "var(--binance)",
-        }),
-        Plot.text(rates, { ...rateLabel, opacity: 0.3 }),
-        Plot.text(rates, Plot.pointerY({ ...rateLabel, opacity: 1 })),
-        Plot.text(rates, { ...bankLabel, opacity: 0.5 }),
-        Plot.text(rates, Plot.pointerY({ ...bankLabel, opacity: 1 })),
-      ],
-    });
-
-    const x = plot.scale("x").apply;
-    plot.insertAdjacentHTML(
-      "afterbegin",
-      `<defs>
-        <linearGradient
-          id="bank-rate-gradient"
-          gradientUnits="userSpaceOnUse"
-          x1="${x(officialRate)}"
-          y1="0"
-          x2="${x(maxRate)}"
-          y2="0"
-        >
-          <stop offset="0%" stop-color="var(--official)" />
-          <stop offset="100%" stop-color="var(--binance)" />
-        </linearGradient>
-      </defs>`,
+      rates,
+      banks,
+      officialRate,
+      xDomain,
     );
+    addRateGradient(ratesPlot, officialRate, maxRate, GRADIENT_ID);
+    const updateQuoteGuide = addQuoteGuides(ratesPlot, banksByQuote);
 
     element.innerHTML = `
+      <div class="bank-rates__selection">
+        <div class="binance-rate bank-rates__selected-rate" aria-label="Cotización seleccionada">
+          <span class="binance-rate__integer"></span>
+          <span class="binance-rate__separator">.</span>
+          <span class="binance-rate__decimal"></span>
+        </div>
+        <div class="currency-unit bank-rates__selected-unit">
+          <span class="currency-unit__integer">BS</span>
+          <span class="currency-unit__separator">x</span>
+          <span class="currency-unit__decimal">USD</span>
+        </div>
+      </div>
       <div class="bank-rates__header">
         <span class="bank-rates__title">Cotizaciones de venta por banco</span>
         <span class="bank-rates__date">${relativeDate}</span>
       </div>
       <div class="plot-container"></div>`;
-    element.querySelector(".plot-container").append(plot);
+    const plotContainer = element.querySelector(".plot-container");
+    plotContainer.append(distributionPlot, ratesPlot);
 
-    plot.addEventListener(
-      "pointerleave",
-      (event) => {
-        if (event.pointerType === "mouse") event.stopImmediatePropagation();
-      },
-      { capture: true },
+    const rateLabels = markTextElements(ratesPlot, "bank-rates__rate-labels");
+    const bankLabels = markTextElements(ratesPlot, "bank-rates__bank-labels");
+    const selectedRate = element.querySelector(".bank-rates__selected-rate");
+    const selectedRateInteger = selectedRate.querySelector(".binance-rate__integer");
+    const selectedRateDecimal = selectedRate.querySelector(".binance-rate__decimal");
+    const setActiveQuote = (quote) => {
+      if (quote == null) return;
+
+      updateLabelOpacities(quote, rates, banksByQuote, rateLabels, bankLabels);
+      updateActiveArea(quote);
+      updateQuoteGuide(quote);
+
+      const [integer, decimal] = Number(quote).toFixed(2).split(".");
+      const position = Math.min(
+        1,
+        Math.max(0, (Number(quote) - officialRate) / (maxRate - officialRate)),
+      );
+      const binanceShare = Number.isFinite(position) ? position * 100 : 100;
+      selectedRateInteger.textContent = integer;
+      selectedRateDecimal.textContent = decimal;
+      selectedRate.setAttribute(
+        "aria-label",
+        `Cotización seleccionada: ${integer}.${decimal} Bs por dólar`,
+      );
+      element.style.setProperty(
+        "--selected-rate-color",
+        `color-mix(in srgb, var(--official) ${100 - binanceShare}%, var(--binance) ${binanceShare}%)`,
+      );
+    };
+
+    ratesPlot.addEventListener("input", () =>
+      setActiveQuote(ratesPlot.value?.value?.toFixed(2) ?? null),
+    );
+    distributionPlot.addEventListener("input", () =>
+      setActiveQuote(distributionPlot.value?.rate?.toFixed(2) ?? null),
     );
 
-    const y = plot.scale("y").apply;
-    const topBank = banks.reduce((top, bank) =>
-      y(bank) < y(top) ? bank : top,
-    );
-    const bounds = plot.getBoundingClientRect();
-    const viewBox = plot.viewBox.baseVal;
-    plot.dispatchEvent(
-      new PointerEvent("pointermove", {
-        clientX: bounds.left + bounds.width / 2,
-        clientY: bounds.top + (y(topBank) / viewBox.height) * bounds.height,
-        pointerId: 1,
-        pointerType: "mouse",
-        isPrimary: true,
-      }),
-    );
+    keepSelectionOnPointerLeave(distributionPlot);
+    keepSelectionOnPointerLeave(ratesPlot);
+    setQuoteAsDefault(distributionPlot, defaultQuote);
   }
 
   const resizeObserver = new ResizeObserver(([entry]) => {

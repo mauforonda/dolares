@@ -62,11 +62,13 @@
       ></historical-chart>
       <section class="bank-rates-section">
         <bank-rates aria-label="Diferencia entre la cotización oficial y la venta de los bancos">
+          <div class="bank-rates__skeleton-rate" aria-hidden="true"></div>
           <div class="bank-rates__header" aria-hidden="true">
             <span class="bank-rates__title bank-rates__skeleton-title"></span>
             <span class="bank-rates__date bank-rates__skeleton-date"></span>
           </div>
           <div class="plot-container" aria-hidden="true">
+            <div class="bank-rates__skeleton-distribution"></div>
             <div class="bank-rates__skeleton-chart"></div>
           </div>
         </bank-rates>
