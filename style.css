@@ -511,7 +511,7 @@ exchange-chart {
       padding: 2px;
       border: 1px solid var(--line);
       border-radius: 6px;
-      background: var(--surface);
+      background: var(--background-soft);
 
       label {
         position: relative;
@@ -536,7 +536,7 @@ exchange-chart {
 
         > input:checked + span {
           color: var(--selected-rate-color, var(--ink));
-          background: var(--background);
+          background: var(--surface);
           box-shadow: 0 1px 2px var(--line);
         }
 
