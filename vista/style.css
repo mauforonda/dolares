@@ -107,6 +107,41 @@ main {
     margin-inline: 10px;
   }
 
+  .official-rate,
+  .binance-rate,
+  .bank-rates__selected-rate {
+    display: grid;
+    grid-template-columns: var(--rate-columns);
+    width: max-content;
+    align-items: baseline;
+    font-size: var(--rate-integer-size);
+    gap: var(--rate-column-gap);
+
+    .official-rate__integer,
+    .binance-rate__integer {
+      font-size: inherit;
+      font-weight: 600;
+      line-height: 1;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .official-rate__decimal,
+    .binance-rate__decimal {
+      font-size: var(--rate-decimal-size);
+      font-weight: 600;
+      line-height: 1;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .official-rate__separator,
+    .binance-rate__separator {
+      font-size: 0.5em;
+      justify-self: center;
+    }
+  }
+
   .rates {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -127,40 +162,6 @@ main {
 
     .binance-quote {
       justify-self: start;
-    }
-
-    .official-rate,
-    .binance-rate {
-      display: grid;
-      grid-template-columns: var(--rate-columns);
-      width: max-content;
-      align-items: baseline;
-      font-size: var(--rate-integer-size);
-      gap: var(--rate-column-gap);
-
-      .official-rate__integer,
-      .binance-rate__integer {
-        font-size: inherit;
-        font-weight: 600;
-        line-height: 1;
-        text-align: right;
-        white-space: nowrap;
-      }
-
-      .official-rate__decimal,
-      .binance-rate__decimal {
-        font-size: var(--rate-decimal-size);
-        font-weight: 600;
-        line-height: 1;
-        text-align: left;
-        white-space: nowrap;
-      }
-
-      .official-rate__separator,
-      .binance-rate__separator {
-        font-size: 0.5em;
-        justify-self: center;
-      }
     }
 
     .official-rate {
@@ -186,6 +187,38 @@ main {
     }
   }
 
+  .currency-unit {
+    display: grid;
+    grid-template-columns: var(--unit-columns);
+    gap: var(--rate-column-gap);
+    width: max-content;
+    margin-inline: auto;
+    padding-inline: 0;
+    color: var(--official);
+    font-size: var(--rate-integer-size);
+    line-height: 1;
+    align-items: baseline;
+
+    > span {
+      font: var(--font-small);
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .currency-unit__integer {
+      text-align: right;
+    }
+
+    .currency-unit__separator {
+      text-align: center;
+      font-size: 10px;
+    }
+
+    .currency-unit__decimal {
+      text-align: left;
+    }
+  }
+
   .timeseries {
     width: auto;
     min-width: 0;
@@ -195,37 +228,6 @@ main {
     border-radius: 25px;
     background: var(--background-soft);
 
-    .currency-unit {
-      display: grid;
-      grid-template-columns: var(--unit-columns);
-      gap: var(--rate-column-gap);
-      width: max-content;
-      margin-inline: auto;
-      padding-inline: 0;
-      color: var(--official);
-      font-size: var(--rate-integer-size);
-      line-height: 1;
-      align-items: baseline;
-
-      > span {
-        font: var(--font-small);
-        font-weight: 600;
-        line-height: 1;
-      }
-
-      .currency-unit__integer {
-        text-align: right;
-      }
-
-      .currency-unit__separator {
-        text-align: center;
-        font-size: 10px;
-      }
-
-      .currency-unit__decimal {
-        text-align: left;
-      }
-    }
   }
 
   .selected-time {
@@ -379,52 +381,6 @@ main[data-state="loading"] {
     opacity: 1;
     animation: skeleton-pulse 1.2s ease-in-out infinite;
   }
-
-  .bank-rates-section bank-rates {
-    --bank-row-height: 28px;
-    --skeleton-bank-count: 11;
-
-    .bank-rates__skeleton-title,
-    .bank-rates__skeleton-date {
-      display: block;
-      height: 9px;
-      border-radius: 2px;
-      background: var(--skeleton);
-      animation: skeleton-pulse 1.2s ease-in-out infinite;
-    }
-
-    .bank-rates__skeleton-title {
-      width: 180px;
-    }
-
-    .bank-rates__skeleton-date {
-      width: 52px;
-    }
-
-    .bank-rates__skeleton-chart {
-      height: calc(var(--skeleton-bank-count) * var(--bank-row-height));
-      background:
-        repeating-linear-gradient(
-            to bottom,
-            var(--skeleton) 0 8px,
-            transparent 8px var(--bank-row-height)
-          )
-          8px 7px / 28px var(--bank-row-height) repeat-y,
-        repeating-linear-gradient(
-            to bottom,
-            var(--skeleton) 0 8px,
-            transparent 8px var(--bank-row-height)
-          )
-          48px 7px / 130px var(--bank-row-height) repeat-y,
-        repeating-linear-gradient(
-            to bottom,
-            var(--skeleton) 0 2px,
-            transparent 2px var(--bank-row-height)
-          )
-          42px 21px / 75% var(--bank-row-height) repeat-y;
-      animation: skeleton-pulse 1.2s ease-in-out infinite;
-    }
-  }
 }
 
 main[data-state="ready"] {
@@ -486,56 +442,130 @@ exchange-chart {
   background: var(--background-soft);
 
   bank-rates {
-    margin: 20px auto 0;
-    background: var(--background);
-  }
-}
-
-bank-rates {
-  display: block;
-  width: min(100% - 20px, 600px);
-  min-width: 0;
-  --bank-row-height: 24px;
-  border: 1px solid var(--line);
-  padding: 10px 0 0 0;
-  border-radius: 14px;
-
-  .bank-rates__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 28px;
-    color: var(--ink);
-    padding: 0 20px 10px 20px;
-
-    > span {
-      white-space: nowrap;
-    }
-  }
-
-  .bank-rates__title {
-    font: var(--font-small);
-    line-height: 1;
-  }
-
-  .bank-rates__date {
-    font:
-      400 10px/1 system-ui,
-      sans-serif;
-  }
-
-  .plot-container {
-    width: 100%;
-    border-top: 1px solid var(--line);
-    border-radius: 14px;
-    background: var(--surface);
-    padding: 10px;
-  }
-
-  svg {
     display: block;
-    width: 100%;
-    height: auto;
+    width: min(100% - 20px, 600px);
+    min-width: 0;
+    margin: 20px auto 0;
+    --bank-row-height: 28px;
+    --bank-distribution-height: 50px;
+    --skeleton-bank-count: 13;
+    background: var(--background);
+    border: 1px solid var(--line);
+    padding-top: 10px;
+    border-radius: 14px;
+
+    .bank-rates__selected-rate {
+      color: var(--selected-rate-color, var(--binance));
+      margin: 0;
+    }
+
+    .bank-rates__selection {
+      display: flex;
+      align-items: baseline;
+      gap: 0;
+      margin: 2px 0 0 10px;
+    }
+
+    .bank-rates__selected-unit {
+      display: flex;
+      gap: 3px;
+      grid-template-columns: none;
+      color: var(--selected-rate-color, var(--binance));
+      margin-inline: 0;
+    }
+
+    .bank-rates__skeleton-rate {
+      height: 32px;
+      width: 130px;
+      margin: 2px 0 10px 10px;
+      background: linear-gradient(var(--skeleton), var(--skeleton)) left center / 130px 22px no-repeat;
+      animation: skeleton-pulse 1.2s ease-in-out infinite;
+    }
+
+    .bank-rates__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 28px;
+      padding: 0 20px 10px;
+      color: var(--ink);
+
+      > span {
+        white-space: nowrap;
+      }
+    }
+
+    .bank-rates__title {
+      font: var(--font-small);
+      line-height: 1;
+      color: var(--selected-rate-color, var(--ink));
+    }
+
+    .bank-rates__date {
+      font: 400 10px/1 system-ui, sans-serif;
+    }
+
+    .plot-container {
+      width: 100%;
+      padding: 10px;
+      border-top: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface);
+    }
+
+    .bank-rates__skeleton-distribution {
+      height: var(--bank-distribution-height);
+      background:
+        linear-gradient(
+          to right,
+          var(--skeleton),
+          transparent
+        ) 42px 100% / calc(100% - 52px) 55% no-repeat;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .bank-rates__skeleton-title,
+    .bank-rates__skeleton-date {
+      display: block;
+      height: 9px;
+      border-radius: 2px;
+      background: var(--skeleton);
+      animation: skeleton-pulse 1.2s ease-in-out infinite;
+    }
+
+    .bank-rates__skeleton-title {
+      width: 180px;
+    }
+
+    .bank-rates__skeleton-date {
+      width: 52px;
+    }
+
+    .bank-rates__skeleton-chart {
+      height: calc(var(--skeleton-bank-count) * var(--bank-row-height));
+      background:
+        repeating-linear-gradient(
+          to bottom,
+          var(--skeleton) 0 8px,
+          transparent 8px var(--bank-row-height)
+        ) 8px 7px / 28px var(--bank-row-height) repeat-y,
+        repeating-linear-gradient(
+          to bottom,
+          var(--skeleton) 0 8px,
+          transparent 8px var(--bank-row-height)
+        ) 48px 7px / 130px var(--bank-row-height) repeat-y,
+        repeating-linear-gradient(
+          to bottom,
+          var(--skeleton) 0 2px,
+          transparent 2px var(--bank-row-height)
+        ) 42px 21px / 75% var(--bank-row-height) repeat-y;
+      animation: skeleton-pulse 1.2s ease-in-out infinite;
+    }
   }
 }
 

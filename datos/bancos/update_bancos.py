@@ -279,6 +279,7 @@ def banco_pyme_de_la_comunidad():
 BANCOS = {
     nombre: globals()[nombre]
     for nombre in URLS
+    if nombre != "banco_prodem"  # Excluido temporalmente: conexión inaccesible desde GitHub Actions.
 }
 
 
