@@ -33,6 +33,7 @@ URLS = {
     "banco_bisa": "https://www.bisa.com/",
     "banco_de_credito": "https://www.bcp.com.bo/",
     "banco_de_la_nacion_argentina": "https://www.bna.com.bo/",
+    "banco_nacional_de_bolivia": "https://www.bnb.com.bo/PortalBNB/Principal/BancaPersonas",
     "banco_economico": "https://www.baneco.com.bo/",
     "banco_fortaleza": "https://www.bancofortaleza.com.bo/",
     "banco_ganadero": "https://www.bg.com.bo/",
@@ -40,7 +41,7 @@ URLS = {
     "banco_solidario": "https://www.bancosol.com.bo/",
     "banco_union": "https://www.bancounion.com.bo/",
     "banco_fie": "https://www.bancofie.com.bo/",
-    "banco_prodem": "https://www.prodem.bo/",
+    "banco_prodem": "https://www.prodem.bo/Inicio",
     "banco_pyme_de_la_comunidad": "https://www.bco.com.bo/",
 }
 
@@ -168,6 +169,28 @@ def banco_de_la_nacion_argentina():
     return {"compra": float(dolar["compra"]), "venta": float(dolar["venta"])}
 
 
+def banco_nacional_de_bolivia():
+    sopa = descargar(URLS["banco_nacional_de_bolivia"])
+    candidatos = sopa.select(
+        "#bodyContainer .col-sm-12.text-center.no-padding-lateral"
+    )
+    bloque = next(
+        candidato
+        for candidato in candidatos
+        if "tipos de cambio" in sin_acentos(texto(candidato))
+        and "dolar compra" in sin_acentos(texto(candidato))
+    )
+
+    spans = bloque.select("span")
+    valores = {}
+    for posicion, span in enumerate(spans[:-1]):
+        etiqueta = sin_acentos(texto(span))
+        if etiqueta in {"dolar compra", "dolar venta"}:
+            valores[etiqueta] = numero(texto(spans[posicion + 1]))
+
+    return {"compra": valores["dolar compra"], "venta": valores["dolar venta"]}
+
+
 def banco_economico():
     sopa = descargar(URLS["banco_economico"])
     contenido = texto(sopa.select_one("#cotizacion"))
@@ -256,7 +279,6 @@ def banco_pyme_de_la_comunidad():
 BANCOS = {
     nombre: globals()[nombre]
     for nombre in URLS
-    if nombre != "banco_prodem"  # GitHub Actions no logra conectarse al servidor.
 }
 
 
