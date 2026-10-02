@@ -296,15 +296,10 @@ def actualizar_archivo(tipo_cotizacion, nuevos):
     partes.append(actuales)
     datos = pd.concat(partes, ignore_index=True)
     datos["timestamp"] = datos["timestamp"].astype(str).str[:10]
-    datos["_timestamp_orden"] = pd.to_datetime(
-        datos["timestamp"], format="%Y-%m-%d", errors="raise", utc=True
-    )
     datos = (
-        datos.sort_values("_timestamp_orden")
-        .drop_duplicates(subset=["timestamp", "banco"], keep="last")
-        .sort_values(["_timestamp_orden", "banco"])
+        datos.drop_duplicates(subset=["timestamp", "banco"], keep="last")
+        .sort_values(["timestamp", "banco"])
     )
-    datos = datos.drop(columns="_timestamp_orden")
     datos.to_csv(ruta, columns=columnas, index=False)
 
 
