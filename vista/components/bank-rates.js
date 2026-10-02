@@ -227,7 +227,7 @@ function createDistributionPlot(width, height, counts, xDomain, maxCount, margin
       Plot.areaY(counts, {
         x: "rate",
         y: "count",
-        curve: "natural",
+        curve: "cardinal",
         fill: `url(#${DISTRIBUTION_GRADIENT_ID})`,
         fillOpacity: .2,
         className: DISTRIBUTION_AREA_CLASS,
@@ -235,7 +235,7 @@ function createDistributionPlot(width, height, counts, xDomain, maxCount, margin
       Plot.line(counts, {
         x: "rate",
         y: "count",
-        curve: "natural",
+        curve: "cardinal",
         stroke: `url(#${DISTRIBUTION_LINE_GRADIENT_ID})`,
         strokeWidth: 1,
         strokeOpacity: 0.2,
