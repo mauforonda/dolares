@@ -1,7 +1,5 @@
 name: Actualizar tipo Binance
 on:
-  schedule:
-    - cron: '0,30 * * * *'
   workflow_dispatch:
 
 permissions:
