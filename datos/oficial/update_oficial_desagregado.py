@@ -19,7 +19,7 @@ from bs4 import BeautifulSoup
 
 TABLA_URL = "https://www.bcb.gob.bo/bcb_tco_publico_detalle_historico.php"
 TABLA_SELECTOR = "table.matrix"
-FECHA_SELECTOR = ".vrd-date-info"
+FECHA_SELECTOR = ".vrd-info-strip .vrd-info-col"
 COMPRAS_DETALLE_FN = "compras_detalle.csv"
 BANCOS_DETALLE_FN = "bancos_detalle.csv"
 TOTALES = {"TOTAL", "TCO"}
@@ -52,13 +52,13 @@ def normalizar_fecha_es(texto):
 
 
 def fecha_de_corte(html):
-    info = html.select_one(FECHA_SELECTOR)
-    if info is None:
-        raise ValueError("No se encontró la fecha de corte en el reporte")
-    fecha = re.search(r"Fecha de corte:\s*(.+?)(?=\s*Vigencia:|$)", info.get_text(" ", strip=True))
-    if fecha is None:
-        raise ValueError("No se encontró el texto de fecha de corte en el reporte")
-    return normalizar_fecha_es(fecha.group(1))
+    for info in html.select(FECHA_SELECTOR):
+        etiqueta = info.select_one("span")
+        if etiqueta and etiqueta.get_text(" ", strip=True).lower().startswith("fecha de corte"):
+            fecha = info.select_one("strong")
+            if fecha is not None:
+                return normalizar_fecha_es(fecha.get_text(" ", strip=True))
+    raise ValueError("No se encontró la fecha de corte en el reporte")
 
 
 def consultar_fuente(session, fecha=None):
