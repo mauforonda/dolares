@@ -535,7 +535,7 @@ timestamp,banco,valor
 2026-11-10,banco_pyme_de_la_comunidad,12.0
 2026-11-10,banco_solidario,12.25
 2026-11-10,banco_union,12.05
-2026-11-11,banco_bisa,11.86
+2026-11-11,banco_bisa,11.9
 2026-11-11,banco_de_credito,12.01
 2026-11-11,banco_de_la_nacion_argentina,12.01
 2026-11-11,banco_economico,12.06
@@ -544,5 +544,5 @@ timestamp,banco,valor
 2026-11-11,banco_mercantil_santa_cruz,12.01
 2026-11-11,banco_nacional_de_bolivia,12.01
 2026-11-11,banco_pyme_de_la_comunidad,11.96
-2026-11-11,banco_solidario,12.25
+2026-11-11,banco_solidario,11.96
 2026-11-11,banco_union,12.05
