@@ -221,7 +221,7 @@ def banco_ganadero():
         bloque = valor.parent.parent
         por_etiqueta[sin_acentos(texto(bloque))] = numero(texto(valor))
     compra = next(v for etiqueta, v in por_etiqueta.items() if "t. cambio oficial" in etiqueta)
-    venta = next(v for etiqueta, v in por_etiqueta.items() if "valor ref. venta usd" in etiqueta)
+    venta = next(v for etiqueta, v in por_etiqueta.items() if "t. cambio venta" in etiqueta)
     return {"compra": compra, "venta": venta}
 
 
