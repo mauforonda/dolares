@@ -5,6 +5,7 @@ import re
 import sys
 import time
 import unicodedata
+import warnings
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -13,6 +14,7 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from requests.adapters import HTTPAdapter
+from urllib3.exceptions import InsecureRequestWarning
 from urllib3.util.ssl_ import create_urllib3_context
 
 
@@ -61,19 +63,23 @@ class BCPAdapter(HTTPAdapter):
         return super().init_poolmanager(*args, **kwargs)
 
 
-def solicitar(method, url, headers=None, max_retries=3):
+def solicitar(method, url, headers=None, max_retries=3, verify=True):
     request_headers = {**REQUEST_HEADERS, **(headers or {})}
     for intento in range(max_retries + 1):
         try:
             with requests.Session() as session:
                 if url.startswith(URLS["banco_de_credito"]):
                     session.mount(URLS["banco_de_credito"], BCPAdapter())
-                response = session.request(
-                    method,
-                    url,
-                    headers=request_headers,
-                    timeout=REQUEST_TIMEOUT,
-                )
+                with warnings.catch_warnings():
+                    if not verify:
+                        warnings.simplefilter("ignore", InsecureRequestWarning)
+                    response = session.request(
+                        method,
+                        url,
+                        headers=request_headers,
+                        timeout=REQUEST_TIMEOUT,
+                        verify=verify,
+                    )
             response.raise_for_status()
             return response
         except requests.RequestException:
@@ -82,12 +88,12 @@ def solicitar(method, url, headers=None, max_retries=3):
             time.sleep(2**intento)
 
 
-def descargar(url):
-    return BeautifulSoup(solicitar("GET", url).text, "html.parser")
+def descargar(url, verify=True):
+    return BeautifulSoup(solicitar("GET", url, verify=verify).text, "html.parser")
 
 
-def descargar_json(url):
-    return solicitar("GET", url).json()
+def descargar_json(url, verify=True):
+    return solicitar("GET", url, verify=verify).json()
 
 
 def texto(elemento):
@@ -159,14 +165,8 @@ def banco_de_credito():
 
 def banco_de_la_nacion_argentina():
     sopa = descargar(URLS["banco_de_la_nacion_argentina"])
-    compra = sopa.select_one('span[x-text="cotizacion.compra"]')
-    venta = sopa.select_one('span[x-text="cotizacion.venta"]')
-    if texto(compra) and texto(venta):
-        return {"compra": numero(texto(compra)), "venta": numero(texto(venta))}
-
-    datos = descargar_json(URLS["banco_de_la_nacion_argentina"] + "Home/CargarCotizaciones")
-    dolar = next(item for item in datos if str(item.get("moneda", "")).upper() == "USD")
-    return {"compra": float(dolar["compra"]), "venta": float(dolar["venta"])}
+    franja = texto(sopa.select_one(".franja-indicadores"))
+    return cotizaciones_desde_texto(franja, r"usd\s+compra", r"venta")
 
 
 def banco_nacional_de_bolivia():
@@ -202,11 +202,13 @@ def banco_economico():
 
 
 def banco_fortaleza():
-    sopa = descargar(URLS["banco_fortaleza"])
+    # Sin verificación TLS: en GitHub Actions falla la verificación del certificado
+    # de www.bancofortaleza.com.bo. Solo lee cotizaciones públicas.
+    sopa = descargar(URLS["banco_fortaleza"], verify=False)
     compra = sopa.select_one('span[data-exchange="buyExchange"]')
     venta = sopa.select_one('span[data-exchange="saleExchange"]')
     if not re.search(r"\d", texto(compra)) or not re.search(r"\d", texto(venta)):
-        datos = descargar_json(URLS["banco_fortaleza"] + "proxy-exchange.php")["response"]
+        datos = descargar_json(URLS["banco_fortaleza"] + "proxy-exchange.php", verify=False)["response"]
         return {"compra": float(datos["buyExchange"]), "venta": float(datos["saleExchange"])}
     return {"compra": numero(texto(compra)), "venta": numero(texto(venta))}
 
